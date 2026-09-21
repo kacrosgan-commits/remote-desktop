@@ -85,12 +85,15 @@ def key(action: str, name: str) -> dict:
     return {"type": INPUT_KEY, "action": action, "name": name}
 
 
-def config(fps: int | None = None, quality: int | None = None) -> dict:
+def config(fps: int | None = None, quality: int | None = None,
+           scale: float | None = None) -> dict:
     m = {"type": CONFIG}
     if fps is not None:
         m["fps"] = fps
     if quality is not None:
         m["quality"] = quality
+    if scale is not None:
+        m["scale"] = scale
     return m
 
 

@@ -216,17 +216,24 @@ class RemoteSession(QWidget):
         controls.addWidget(QLabel("FPS"))
         self.fps = QSpinBox()
         self.fps.setRange(1, 30)
-        self.fps.setValue(12)
-        self.fps.valueChanged.connect(lambda v: self.net.send_json(P.config(fps=v)))
+        self.fps.setValue(8)
+        self.fps.valueChanged.connect(self._send_stream_config)
         controls.addWidget(self.fps)
 
         controls.addWidget(QLabel("Quality"))
         self.quality = QSpinBox()
         self.quality.setRange(10, 95)
-        self.quality.setValue(60)
-        self.quality.valueChanged.connect(
-            lambda v: self.net.send_json(P.config(quality=v)))
+        self.quality.setValue(45)
+        self.quality.valueChanged.connect(self._send_stream_config)
         controls.addWidget(self.quality)
+
+        controls.addWidget(QLabel("Scale %"))
+        self.scale = QSpinBox()
+        self.scale.setRange(15, 100)
+        self.scale.setValue(45)
+        self.scale.setToolTip("Lower = much faster over the relay (recommended 40–50).")
+        self.scale.valueChanged.connect(self._send_stream_config)
+        controls.addWidget(self.scale)
 
         controls.addStretch(1)
         self.status = QLabel("connecting…")
@@ -235,13 +242,25 @@ class RemoteSession(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.addLayout(controls)
-        layout.addWidget(QLabel("Click the remote screen to type. Ctrl+Shift+Esc releases control."))
+        layout.addWidget(QLabel(
+            "Click the remote screen to type. Ctrl+Shift+Esc releases control. "
+            "Lower Scale % if the picture feels delayed."))
         layout.addWidget(self.view, 1)
 
         self.signals.frame.connect(self.view.set_frame, Qt.ConnectionType.QueuedConnection)
         self.signals.status.connect(self.status.setText, Qt.ConnectionType.QueuedConnection)
         self.signals.peer.connect(self._on_peer, Qt.ConnectionType.QueuedConnection)
         self.net.start()
+
+    def _stream_config(self) -> dict:
+        return P.config(
+            fps=self.fps.value(),
+            quality=self.quality.value(),
+            scale=self.scale.value() / 100.0,
+        )
+
+    def _send_stream_config(self, *_):
+        self.net.send_json(self._stream_config())
 
     def _toggle_block(self, checked: bool):
         self.net.send_json({"type": P.LOCK_INPUT if checked else P.UNLOCK_INPUT})
@@ -264,7 +283,7 @@ class RemoteSession(QWidget):
         if not joined and self.block.isChecked():
             self.block.setChecked(False)
         if joined:
-            self.net.send_json(P.config(fps=self.fps.value(), quality=self.quality.value()))
+            self.net.send_json(self._stream_config())
 
     def shutdown(self):
         self.view.set_control_enabled(False)

@@ -9,7 +9,6 @@ While registered it also streams low-rate JPEG previews for the dashboard.
 """
 import argparse
 import asyncio
-import base64
 import sys
 import os
 import uuid
@@ -36,9 +35,14 @@ DEVICE_FILE = BASE_DIR / "device_id"
 LOG_FILE = BASE_DIR / "agent.log"
 
 # Dashboard thumbnails: keep bandwidth low even with many agents online.
-PREVIEW_FPS = 1.5
-PREVIEW_QUALITY = 35
-PREVIEW_SCALE = 0.28
+PREVIEW_FPS = 2.0
+PREVIEW_QUALITY = 32
+PREVIEW_SCALE = 0.25
+
+# Session stream defaults — full-res JPEG through a VPS is too slow.
+DEFAULT_FPS = 8
+DEFAULT_QUALITY = 45
+DEFAULT_SCALE = 0.45
 
 log = logging.getLogger("agent")
 
@@ -94,6 +98,10 @@ class Agent:
         self.blocker = make_input_blocker()
         self.blocker.start()
         self._peer_present = False
+        # Latest-frame slot: overwrite instead of queuing so lag cannot build up.
+        self._latest_session_jpeg: bytes | None = None
+        self._latest_preview_jpeg: bytes | None = None
+        self._frame_ready = asyncio.Event()
 
     async def run(self):
         log.info(f"device '{self.name}' id={self.device_id} relay={self.args.relay}")
@@ -107,7 +115,14 @@ class Agent:
                             self.args.network_key, self.device_id, self.name)))
                         log.info("online")
                         backoff = 1
-                        await run_pair(self._send_frames(ws), self._recv(ws))
+                        self._latest_session_jpeg = None
+                        self._latest_preview_jpeg = None
+                        self._frame_ready = asyncio.Event()
+                        await run_pair(
+                            self._capture_loop(),
+                            self._send_loop(ws),
+                            self._recv(ws),
+                        )
                 except Exception as e:
                     log.warning(f"disconnected: {e!r}; retrying in {backoff}s")
                 finally:
@@ -127,11 +142,12 @@ class Agent:
         finally:
             self._capture_pool.shutdown(wait=True)
 
-    async def _send_frames(self, ws):
+    async def _capture_loop(self):
+        """Capture as fast as configured; always keep only the newest JPEG."""
         next_preview = 0.0
         while True:
             now = time.monotonic()
-            if now >= next_preview:
+            if not self._peer_present and now >= next_preview:
                 try:
                     jpeg = await asyncio.get_running_loop().run_in_executor(
                         self._capture_pool, self.cap.grab_jpeg,
@@ -139,25 +155,42 @@ class Agent:
                 except Exception as e:
                     log.error(f"preview capture error: {e!r}")
                 else:
-                    # JSON PREVIEW for dashboards; also raw JPEG so relays that
-                    # fan idle binary frames still show a thumbnail.
-                    await ws.send(P.dumps(P.preview(
-                        self.device_id, base64.b64encode(jpeg).decode("ascii"))))
-                    if not self._peer_present:
-                        await ws.send(jpeg)
+                    self._latest_preview_jpeg = jpeg
+                    self._frame_ready.set()
                 next_preview = now + 1 / PREVIEW_FPS
+                await asyncio.sleep(min(0.2, max(0.02, next_preview - time.monotonic())))
+                continue
 
             if self._peer_present:
                 try:
                     jpeg = await asyncio.get_running_loop().run_in_executor(
-                        self._capture_pool, self.cap.grab_jpeg, self.quality, self.scale)
+                        self._capture_pool, self.cap.grab_jpeg,
+                        self.quality, self.scale)
                 except Exception as e:
                     log.error(f"capture error: {e!r}")
                 else:
-                    await ws.send(jpeg)
+                    self._latest_session_jpeg = jpeg
+                    self._frame_ready.set()
                 await asyncio.sleep(1 / max(1, self.fps))
             else:
-                await asyncio.sleep(min(0.25, max(0.05, next_preview - time.monotonic())))
+                await asyncio.sleep(0.05)
+
+    async def _send_loop(self, ws):
+        """Send the newest frame only — never drain a backlog of stale screens."""
+        while True:
+            await self._frame_ready.wait()
+            self._frame_ready.clear()
+            if self._peer_present:
+                jpeg = self._latest_session_jpeg
+                self._latest_session_jpeg = None
+                if jpeg:
+                    await ws.send(jpeg)
+            else:
+                jpeg = self._latest_preview_jpeg
+                self._latest_preview_jpeg = None
+                if jpeg:
+                    # Binary only (no base64 JSON) — smaller and faster on the wire.
+                    await ws.send(jpeg)
 
     async def _recv(self, ws):
         async for message in ws:
@@ -170,9 +203,11 @@ class Agent:
             t = msg.get("type")
             if t == P.PEER_JOINED:
                 self._peer_present = True
+                self._latest_preview_jpeg = None
                 log.info("controller connected")
             elif t == P.PEER_LEFT:
                 self._peer_present = False
+                self._latest_session_jpeg = None
                 self.injector.release_all()
                 self.blocker.unblock()
                 log.info("controller left; input unblocked")
@@ -188,9 +223,11 @@ class Agent:
                 log.info("local input unblocked")
             elif t == P.CONFIG:
                 if "fps" in msg:
-                    self.fps = max(1, int(msg["fps"]))
+                    self.fps = max(1, min(30, int(msg["fps"])))
                 if "quality" in msg:
                     self.quality = max(10, min(95, int(msg["quality"])))
+                if "scale" in msg:
+                    self.scale = max(0.15, min(1.0, float(msg["scale"])))
             elif t == P.ERROR:
                 log.error(f"relay error: {msg.get('message')}")
 
@@ -209,9 +246,9 @@ def parse_args(arguments=None):
     ap.add_argument("--relay", default=config.RELAY_URL)
     ap.add_argument("--network-key", default=config.NETWORK_KEY, dest="network_key")
     ap.add_argument("--name", default="")
-    ap.add_argument("--fps", type=int, default=12)
-    ap.add_argument("--quality", type=int, default=60)
-    ap.add_argument("--scale", type=float, default=1.0)
+    ap.add_argument("--fps", type=int, default=DEFAULT_FPS)
+    ap.add_argument("--quality", type=int, default=DEFAULT_QUALITY)
+    ap.add_argument("--scale", type=float, default=DEFAULT_SCALE)
     ap.add_argument("--monitor", type=int, default=1)
     args = ap.parse_args(arguments)
     if not 1 <= args.fps <= 30:

@@ -18,7 +18,7 @@ class ConsoleSignals(QObject):
 
 
 class Signals(QObject):
-    frame = Signal(bytes)
+    frame = Signal(object)  # latest JPEG bytes (coalesced)
     status = Signal(str)
     peer = Signal(bool)
 
@@ -184,10 +184,14 @@ class Net(_Client):
         self.device_id = device_id
         self.outq = None
         self._connected = False
+        self._latest_frame: bytes | None = None
+        self._frame_emit_pending = False
 
     async def _session(self):
         async with websockets.connect(self.url, max_size=None, close_timeout=2) as ws:
             self.outq = asyncio.Queue()
+            self._latest_frame = None
+            self._frame_emit_pending = False
             await ws.send(P.dumps(P.auth_controller(self.network_key, self.device_id)))
             self.signals.status.emit("connecting…")
             await run_pair(self._recv(ws), self._send(ws))
@@ -195,12 +199,26 @@ class Net(_Client):
     def _disconnected(self):
         self._connected = False
         self.outq = None
+        self._latest_frame = None
+        self._frame_emit_pending = False
         self.signals.peer.emit(False)
+
+    def _flush_frame(self):
+        """Emit at most one queued paint with the newest JPEG."""
+        self._frame_emit_pending = False
+        data = self._latest_frame
+        self._latest_frame = None
+        if data is not None:
+            self.signals.frame.emit(data)
 
     async def _recv(self, ws):
         async for message in ws:
             if isinstance(message, bytes):
-                self.signals.frame.emit(message)
+                # Drop stale frames: only the newest JPEG is shown.
+                self._latest_frame = message
+                if not self._frame_emit_pending:
+                    self._frame_emit_pending = True
+                    self.loop.call_soon(self._flush_frame)
                 continue
             msg = P.loads(message)
             kind = msg.get("type")
@@ -260,8 +278,8 @@ class PreviewFeed:
 
     def _on_peer(self, joined: bool):
         if joined:
-            # Low-rate thumbnail stream for the grid.
-            self.net.send_json(P.config(fps=2, quality=40))
+            # Small, frequent thumbnails — scale is critical for VPS latency.
+            self.net.send_json(P.config(fps=4, quality=35, scale=0.3))
 
     def stop(self):
         self.card = None
