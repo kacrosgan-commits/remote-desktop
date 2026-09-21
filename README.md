@@ -6,9 +6,14 @@ connect outbound, so agent computers do not need port forwarding.
 
 ## Updated version
 
+- **Dashboard screen grid:** the Devices tab shows a live thumbnail of every
+  online computer. Click **View** (or double-click the list) to open a full
+  control session. Online/offline status updates automatically as agents
+  connect or disconnect.
 - **Automatic installation and startup:** launch the newly built agent once.
   It installs for the current Windows user and starts at that user's next
-  sign-in, including after a restart.
+  sign-in, including after a restart. A logon task also restarts the agent
+  if it exits unexpectedly.
 - **Refresh:** reload the device list with Refresh/F5; reconnect an individual
   session with Refresh screen.
 - **Mouse and keyboard:** an explicit control/view-only toggle, clicks,
@@ -48,9 +53,11 @@ source as part of the update: it also fixes an old connection incorrectly
 marking a newly reconnected agent offline after a restart.
 
 Agents register under a stable device ID. The dashboard subscribes to a
-network key and receives online/offline updates. Double-click an online
-machine to open its session; several machines can be open in separate tabs.
-Only actively controlled agents stream screen frames.
+network key and receives online/offline updates plus live screen previews.
+Double-click an online machine (or click **View**) to open its session;
+several machines can be open in separate tabs. Full-resolution frames stream
+only while a control session is open; low-rate thumbnails always feed the
+dashboard while the agent is online.
 
 The network key grants access to the computers using it. Keep it private
 and use a long random value. JPEG frames travel over WebSocket binary

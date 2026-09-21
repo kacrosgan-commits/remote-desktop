@@ -65,5 +65,8 @@ def test_startup_command_quotes_windows_paths_with_spaces(monkeypatch):
     registry.CreateKey.return_value.__enter__ = Mock(return_value="key")
     registry.CreateKey.return_value.__exit__ = Mock(return_value=False)
     monkeypatch.setitem(sys.modules, "winreg", registry)
+    monkeypatch.setattr(startup, "_register_logon_task", Mock())
     startup.register_startup(Path("C:/Users/Test User/RemoteDesk/agent.exe"))
     assert registry.SetValueEx.call_args.args[-1] == '"C:/Users/Test User/RemoteDesk/agent.exe" --run'
+    startup._register_logon_task.assert_called_once()
+

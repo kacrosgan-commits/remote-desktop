@@ -5,14 +5,17 @@ to a log file at ~/.remotedesk/agent.log instead of the screen.
 
 On startup it REGISTERS with the relay using the baked-in network key, so it
 appears in the dashboard automatically, and keeps a stable device id.
+While registered it also streams low-rate JPEG previews for the dashboard.
 """
 import argparse
 import asyncio
+import base64
 import sys
 import os
 import uuid
 import socket
 import logging
+import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +34,11 @@ from protocol.connection import run_pair  # noqa: E402
 BASE_DIR = Path.home() / ".remotedesk"
 DEVICE_FILE = BASE_DIR / "device_id"
 LOG_FILE = BASE_DIR / "agent.log"
+
+# Dashboard thumbnails: keep bandwidth low even with many agents online.
+PREVIEW_FPS = 1.5
+PREVIEW_QUALITY = 35
+PREVIEW_SCALE = 0.28
 
 log = logging.getLogger("agent")
 
@@ -120,7 +128,21 @@ class Agent:
             self._capture_pool.shutdown(wait=True)
 
     async def _send_frames(self, ws):
+        next_preview = 0.0
         while True:
+            now = time.monotonic()
+            if now >= next_preview:
+                try:
+                    jpeg = await asyncio.get_running_loop().run_in_executor(
+                        self._capture_pool, self.cap.grab_jpeg,
+                        PREVIEW_QUALITY, PREVIEW_SCALE)
+                except Exception as e:
+                    log.error(f"preview capture error: {e!r}")
+                else:
+                    await ws.send(P.dumps(P.preview(
+                        self.device_id, base64.b64encode(jpeg).decode("ascii"))))
+                next_preview = now + 1 / PREVIEW_FPS
+
             if self._peer_present:
                 try:
                     jpeg = await asyncio.get_running_loop().run_in_executor(
@@ -129,7 +151,9 @@ class Agent:
                     log.error(f"capture error: {e!r}")
                 else:
                     await ws.send(jpeg)
-            await asyncio.sleep(1 / max(1, self.fps))
+                await asyncio.sleep(1 / max(1, self.fps))
+            else:
+                await asyncio.sleep(min(0.25, max(0.05, next_preview - time.monotonic())))
 
     async def _recv(self, ws):
         async for message in ws:

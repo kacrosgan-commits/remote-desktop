@@ -14,6 +14,7 @@ import json
 # ---- message "type" values ---------------------------------------------------
 AUTH = "AUTH"              # client -> relay (first message; role-specific)
 DEVICE_LIST = "DEVICE_LIST"  # relay -> console: [{id, name, online}]
+PREVIEW = "PREVIEW"        # agent -> relay -> console: {device_id, jpeg} (base64)
 PEER_JOINED = "PEER_JOINED"  # relay -> agent/controller
 PEER_LEFT = "PEER_LEFT"      # relay -> agent/controller
 ERROR = "ERROR"            # relay -> client {message}
@@ -89,6 +90,11 @@ def config(fps: int | None = None, quality: int | None = None) -> dict:
     if quality is not None:
         m["quality"] = quality
     return m
+
+
+def preview(device_id: str, jpeg_b64: str) -> dict:
+    """Dashboard thumbnail: JPEG as base64 so consoles can fan-in many devices."""
+    return {"type": PREVIEW, "device_id": device_id, "jpeg": jpeg_b64}
 
 
 KEY_NAMES = {

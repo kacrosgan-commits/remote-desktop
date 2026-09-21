@@ -17,8 +17,8 @@ class Recorder:
     def __init__(self):
         self.values = []
 
-    def emit(self, value):
-        self.values.append(value)
+    def emit(self, *value):
+        self.values.append(value[0] if len(value) == 1 else value)
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ async def receive(ws):
 
 def test_refresh_keeps_sessions_and_reconnects_after_agent_restart(relay_url):
     async def scenario():
-        console_signals = SimpleNamespace(devices=Recorder(), status=Recorder())
+        console_signals = SimpleNamespace(devices=Recorder(), status=Recorder(), preview=Recorder())
         session_signals = SimpleNamespace(peer=Recorder(), status=Recorder(), frame=Recorder())
         console = ConsoleNet(relay_url, "test-network", console_signals)
         session = Net(relay_url, "test-network", "device", session_signals)
@@ -66,6 +66,8 @@ def test_refresh_keeps_sessions_and_reconnects_after_agent_restart(relay_url):
                 await eventually(lambda: console_signals.devices.values and
                                  console_signals.devices.values[-1] == [
                                      {"id": "device", "name": "Test PC", "online": True}])
+                await agent.send(P.dumps(P.preview("device", __import__("base64").b64encode(b"thumb").decode())))
+                await eventually(lambda: console_signals.preview.values == [("device", b"thumb")])
                 session.start()
                 assert (await receive(agent))["type"] == P.PEER_JOINED
                 await eventually(lambda: session_signals.peer.values == [True])

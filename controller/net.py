@@ -1,5 +1,6 @@
 """Reconnectable dashboard and remote-session clients, each on its own thread."""
 import asyncio
+import base64
 import threading
 
 import websockets
@@ -11,6 +12,7 @@ from protocol.connection import run_pair
 
 class ConsoleSignals(QObject):
     devices = Signal(list)
+    preview = Signal(str, bytes)  # device_id, jpeg bytes
     status = Signal(str)
 
 
@@ -91,10 +93,20 @@ class ConsoleNet(_Client):
                 if isinstance(message, bytes):
                     continue
                 msg = P.loads(message)
-                if msg.get("type") == P.DEVICE_LIST:
+                kind = msg.get("type")
+                if kind == P.DEVICE_LIST:
                     self.signals.devices.emit(msg.get("devices", []))
                     self.signals.status.emit("online")
-                elif msg.get("type") == P.ERROR:
+                elif kind == P.PREVIEW:
+                    device_id = msg.get("device_id")
+                    jpeg_b64 = msg.get("jpeg")
+                    if device_id and jpeg_b64:
+                        try:
+                            self.signals.preview.emit(
+                                device_id, base64.b64decode(jpeg_b64))
+                        except Exception:
+                            pass
+                elif kind == P.ERROR:
                     raise RuntimeError(msg.get("message", "relay error"))
 
     def _disconnected(self):

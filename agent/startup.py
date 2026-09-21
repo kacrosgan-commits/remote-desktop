@@ -6,9 +6,12 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
+import textwrap
 
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 RUN_NAME = "RemoteDeskAgent"
+TASK_NAME = "RemoteDeskAgent"
 _instance_handle = None
 
 
@@ -16,14 +19,115 @@ def install_dir() -> Path:
     return Path(os.environ["LOCALAPPDATA"]) / "RemoteDesk"
 
 
-def register_startup(executable: Path):
-    import winreg
-
+def _startup_command(executable: Path) -> str:
     command = subprocess.list2cmdline([str(executable), "--run"])
     if len(command) > 260:
         raise ValueError("The installation path is too long for Windows startup.")
+    return command
+
+
+def register_startup(executable: Path):
+    """Register both HKCU Run and a logon task that restarts if the agent exits."""
+    import winreg
+
+    command = _startup_command(executable)
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
         winreg.SetValueEx(key, RUN_NAME, 0, winreg.REG_SZ, command)
+    _register_logon_task(executable)
+
+
+def _xml_escape(value: str) -> str:
+    return (value.replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _register_logon_task(executable: Path):
+    """User-level scheduled task: start at sign-in and restart on failure."""
+    if sys.platform != "win32":
+        return
+    # Ensure the Run-key path is still valid even if task creation fails.
+    _startup_command(executable)
+    exe_xml = _xml_escape(str(executable))
+    work_xml = _xml_escape(str(executable.parent))
+    xml = textwrap.dedent(f"""\
+        <?xml version="1.0" encoding="UTF-16"?>
+        <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+          <RegistrationInfo>
+            <Description>RemoteDesk agent — keeps the PC online after sign-in.</Description>
+          </RegistrationInfo>
+          <Triggers>
+            <LogonTrigger>
+              <Enabled>true</Enabled>
+            </LogonTrigger>
+          </Triggers>
+          <Principals>
+            <Principal id="Author">
+              <LogonType>InteractiveToken</LogonType>
+              <RunLevel>LeastPrivilege</RunLevel>
+            </Principal>
+          </Principals>
+          <Settings>
+            <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+            <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+            <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+            <AllowHardTerminate>true</AllowHardTerminate>
+            <StartWhenAvailable>true</StartWhenAvailable>
+            <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+            <IdleSettings>
+              <StopOnIdleEnd>false</StopOnIdleEnd>
+              <RestartOnIdle>false</RestartOnIdle>
+            </IdleSettings>
+            <AllowStartOnDemand>true</AllowStartOnDemand>
+            <Enabled>true</Enabled>
+            <Hidden>false</Hidden>
+            <RunOnlyIfIdle>false</RunOnlyIfIdle>
+            <WakeToRun>false</WakeToRun>
+            <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+            <Priority>7</Priority>
+            <RestartOnFailure>
+              <Interval>PT1M</Interval>
+              <Count>999</Count>
+            </RestartOnFailure>
+          </Settings>
+          <Actions Context="Author">
+            <Exec>
+              <Command>{exe_xml}</Command>
+              <Arguments>--run</Arguments>
+              <WorkingDirectory>{work_xml}</WorkingDirectory>
+            </Exec>
+          </Actions>
+        </Task>
+        """)
+    # schtasks /Create /XML requires a UTF-16 LE file on Windows.
+    with tempfile.NamedTemporaryFile("wb", suffix=".xml", delete=False) as handle:
+        handle.write(xml.encode("utf-16"))
+        xml_path = handle.name
+    try:
+        subprocess.run(
+            ["schtasks", "/Create", "/TN", TASK_NAME, "/XML", xml_path, "/F"],
+            check=False, capture_output=True, text=True,
+        )
+    finally:
+        try:
+            os.unlink(xml_path)
+        except OSError:
+            pass
+
+
+def unregister_startup():
+    """Best-effort removal of Run key and scheduled task (used by uninstall bat)."""
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
+            winreg.DeleteValue(key, RUN_NAME)
+    except OSError:
+        pass
+    subprocess.run(
+        ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"],
+        check=False, capture_output=True, text=True,
+    )
 
 
 def install(source: Path, arguments: list[str]) -> Path:
@@ -96,7 +200,8 @@ def prepare(arguments: list[str], validate) -> list[str] | None:
     subprocess.Popen([str(target), "--run"], cwd=target.parent, env=environment)
     notify(
         "RemoteDesk Agent is installed and starting.\n\n"
-        "It will start automatically when this Windows user signs in after a restart.\n"
+        "It will start automatically when this Windows user signs in after a restart,\n"
+        "and will restart itself if it stops unexpectedly.\n"
         f"Installed in: {target.parent}\n\n"
         "To remove it, run uninstall-agent.bat in that folder.")
     return None

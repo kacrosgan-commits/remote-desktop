@@ -2,10 +2,12 @@
 
 Roles (decided by the first AUTH message):
   * agent      -> registers under a network_key + device_id; becomes online
-                  and controllable. Streams its screen only while a
+                  and controllable. Always sends low-rate PREVIEW thumbnails
+                  for the dashboard; streams full frames only while a
                   controller is attached.
   * console    -> the dashboard: subscribes to a network_key and receives
-                  a live DEVICE_LIST (pushed on every change).
+                  a live DEVICE_LIST (pushed on every change) plus PREVIEW
+                  thumbnails for each online agent.
   * controller -> an active control session for one device_id: input flows
                   to that device's agent, frames flow back.
 
@@ -69,6 +71,15 @@ async def broadcast_devices(net: Network):
     for c in list(net.consoles):
         try:
             await c.send_text(P.dumps(payload))
+        except Exception:
+            net.consoles.discard(c)
+
+
+async def broadcast_preview(net: Network, text: str):
+    """Fan dashboard thumbnails to every console on this network key."""
+    for c in list(net.consoles):
+        try:
+            await c.send_text(text)
         except Exception:
             net.consoles.discard(c)
 
@@ -143,9 +154,19 @@ async def _handle_agent(ws: WebSocket, net: Network, auth: dict):
                 if c is not None:
                     await c.send_bytes(m["bytes"])
             elif m.get("text") is not None:
-                c = dev.controller
-                if c is not None:
-                    await c.send_text(m["text"])
+                text = m["text"]
+                try:
+                    msg = P.loads(text)
+                except Exception:
+                    msg = None
+                if isinstance(msg, dict) and msg.get("type") == P.PREVIEW:
+                    # Ensure device_id matches the registered agent.
+                    msg["device_id"] = device_id
+                    await broadcast_preview(net, P.dumps(msg))
+                else:
+                    c = dev.controller
+                    if c is not None:
+                        await c.send_text(text)
     except WebSocketDisconnect:
         pass
     except Exception:

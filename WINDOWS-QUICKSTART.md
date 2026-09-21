@@ -21,7 +21,8 @@ update must be built on Windows before these new features are available in an ex
    whose desktop you want to control. It installs in
    `%LOCALAPPDATA%\RemoteDesk`, starts, and shows an installation confirmation.
 3. After subsequent restarts, it starts automatically when **that user signs in**.
-   Windows may delay startup briefly. Keep the relay running and the network available.
+   Windows may delay startup briefly. A logon scheduled task also restarts the
+   agent if it stops unexpectedly. Keep the relay running and the network available.
 
 Installation is needed only once. It does not reinstall on every restart and
 does not control the Windows sign-in screen. It runs with the signed-in user's
@@ -39,10 +40,12 @@ Windows user. Logs are in `%USERPROFILE%\.remotedesk\agent.log`.
 
 ## On the controller computer
 
-1. Open the **newly built** `controller.exe`.
-2. Click **Refresh** (or press F5 on the Devices tab) to reload the device list.
-   Open remote sessions stay open.
-3. Double-click an online computer. Keep **Control mouse and keyboard** checked,
+1. Open the **newly built** `controller.exe`. The Devices tab shows a live
+   thumbnail grid of every online computer; online/offline updates automatically.
+2. Click **Refresh** (or press F5) to reload the device list. Open remote
+   sessions stay open.
+3. Click **View** on a card (or double-click the device in the sidebar) to open
+   a control session. Keep **Control mouse and keyboard** checked,
    then click its screen to type, click, drag, double-click, or scroll.
 4. Uncheck that option for view-only mode. **Ctrl+Shift+Esc** also releases control.
    Switching tabs/windows releases held remote keys and mouse buttons.
@@ -52,11 +55,10 @@ The separate **Block local input on remote PC** option blocks that PC's physical
 keyboard/mouse. It is unrelated to enabling the controller's mouse/keyboard.
 Ctrl+Alt+Del and OS-reserved shortcuts may be handled by Windows locally.
 
-The relay protocol is unchanged. Rebuild/redeploy your relay using the updated
-`relay/server.py` as part of this update (see README.md). It fixes overlapping
-old/new connections after a restart incorrectly marking the new agent offline.
-The controller features are compatible with older relays, but that reconnect
-fix requires the updated relay.
+Rebuild/redeploy your relay using the updated `relay/server.py` as part of this
+update (see README.md) so dashboard thumbnails and reconnect fixes are available.
+The reconnect fix also covers overlapping old/new connections after a restart
+incorrectly marking the new agent offline.
 
 ## Checks before deployment
 
