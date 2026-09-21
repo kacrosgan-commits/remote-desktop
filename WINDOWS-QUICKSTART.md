@@ -20,6 +20,8 @@ update must be built on Windows before these new features are available in an ex
 2. Double-click the **newly built** `agent.exe` once, as the Windows user
    whose desktop you want to control. It installs in
    `%LOCALAPPDATA%\RemoteDesk`, starts, and shows an installation confirmation.
+   If an older agent is already running, the new exe stops it and replaces it
+   automatically — you no longer need to close it by hand first.
 3. After subsequent restarts, it starts automatically when **that user signs in**.
    Windows may delay startup briefly. A logon scheduled task also restarts the
    agent if it stops unexpectedly. Keep the relay running and the network available.
@@ -42,12 +44,12 @@ Windows user. Logs are in `%USERPROFILE%\.remotedesk\agent.log`.
 
 1. Open the **newly built** `controller.exe`. The Devices tab shows a live
    thumbnail grid of every online computer; online/offline updates automatically.
-2. Click **Refresh** (or press F5) to reload the device list. Open remote
-   sessions stay open.
-3. Click **View** on a card (or double-click the device in the sidebar) to open
+2. Click **View** on a card (or double-click the device in the sidebar) to open
    a control session. Keep **Control mouse and keyboard** checked,
    then click its screen to type, click, drag, double-click, or scroll.
-4. Uncheck that option for view-only mode. **Ctrl+Shift+Esc** also releases control.
+3. Select a PC in the sidebar and click **Remove selected** to clear it from
+   the list (offline PCs stay gone until that agent reconnects).
+4. Uncheck control for view-only mode. **Ctrl+Shift+Esc** also releases control.
    Switching tabs/windows releases held remote keys and mouse buttons.
 5. Use **Refresh screen** to reconnect a stalled remote tab.
 

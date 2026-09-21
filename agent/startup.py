@@ -130,17 +130,55 @@ def unregister_startup():
     )
 
 
+def stop_installed_agent(target: Path):
+    """Stop a previously installed agent so its exe can be overwritten on update."""
+    if sys.platform != "win32":
+        return
+    # Prevent the logon task from immediately relaunching the old binary.
+    subprocess.run(
+        ["schtasks", "/End", "/TN", TASK_NAME],
+        check=False, capture_output=True, text=True,
+    )
+    target_path = str(target.resolve())
+    script = (
+        "$ErrorActionPreference = 'SilentlyContinue'; "
+        f"$target = {target_path!r}; "
+        "Get-Process -Name agent | Where-Object { $_.Path -eq $target } | "
+        "Stop-Process -Force; "
+        "Start-Sleep -Milliseconds 900"
+    )
+    subprocess.run(
+        ["powershell", "-NoProfile", "-Command", script],
+        check=False, capture_output=True, text=True,
+    )
+
+
 def install(source: Path, arguments: list[str]) -> Path:
     destination = install_dir()
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / "agent.exe"
     if source.resolve() != target.resolve():
-        try:
-            shutil.copy2(source, target)
-        except PermissionError as exc:
+        # Old agent.exe holds a file lock while running — stop it, then copy.
+        last_error = None
+        for attempt in range(5):
+            if attempt:
+                stop_installed_agent(target)
+            elif target.exists():
+                stop_installed_agent(target)
+            try:
+                shutil.copy2(source, target)
+                last_error = None
+                break
+            except PermissionError as exc:
+                last_error = exc
+        if last_error is not None:
             raise RuntimeError(
-                "Close the installed RemoteDesk agent before updating it. "
-                "Then launch the new agent.exe again.") from exc
+                "Could not update the installed RemoteDesk agent because it is "
+                "still running.\n\n"
+                "Open Task Manager, end \"agent.exe\" (RemoteDesk), then launch "
+                "the new agent.exe again.\n\n"
+                "Or run uninstall-agent.bat in %LOCALAPPDATA%\\RemoteDesk first."
+            ) from last_error
     (destination / "arguments.json").write_text(
         json.dumps(arguments), encoding="utf-8")
     resources = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))

@@ -193,13 +193,48 @@ async def _handle_console(ws: WebSocket, net: Network):
             m = await ws.receive()
             if m.get("type") == "websocket.disconnect":
                 break
-            # console is receive-only; ignore anything it sends
+            if m.get("text") is None:
+                continue
+            try:
+                msg = P.loads(m["text"])
+            except Exception:
+                continue
+            if not isinstance(msg, dict) or msg.get("type") != P.REMOVE_DEVICE:
+                continue
+            device_id = msg.get("device_id")
+            if not device_id or device_id not in net.devices:
+                continue
+            await _remove_device(net, device_id)
     except WebSocketDisconnect:
         pass
     except Exception:
         pass
     finally:
         net.consoles.discard(ws)
+
+
+async def _remove_device(net: Network, device_id: str):
+    """Drop a device from the registry and close any live sockets for it."""
+    dev = net.devices.pop(device_id, None)
+    if dev is None:
+        return
+    agent = dev.agent
+    controller = dev.controller
+    dev.agent = None
+    dev.controller = None
+    if controller is not None:
+        await _send(controller, {"type": P.PEER_LEFT, "role": P.ROLE_AGENT})
+        try:
+            await controller.close()
+        except Exception:
+            pass
+    if agent is not None:
+        await _send(agent, {"type": P.PEER_LEFT, "role": P.ROLE_CONTROLLER})
+        try:
+            await agent.close()
+        except Exception:
+            pass
+    await broadcast_devices(net)
 
 
 async def _handle_controller(ws: WebSocket, net: Network, auth: dict):

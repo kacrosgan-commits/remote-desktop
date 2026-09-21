@@ -9,13 +9,14 @@ connect outbound, so agent computers do not need port forwarding.
 - **Dashboard screen grid:** the Devices tab shows a live thumbnail of every
   online computer. Click **View** (or double-click the list) to open a full
   control session. Online/offline status updates automatically as agents
-  connect or disconnect.
+  connect or disconnect. Use **Remove selected** to clear a PC from the list.
 - **Automatic installation and startup:** launch the newly built agent once.
   It installs for the current Windows user and starts at that user's next
-  sign-in, including after a restart. A logon task also restarts the agent
-  if it exits unexpectedly.
-- **Refresh:** reload the device list with Refresh/F5; reconnect an individual
-  session with Refresh screen.
+  sign-in, including after a restart. Updating stops the old agent
+  automatically, then installs and starts the new one. A logon task also
+  restarts the agent if it exits unexpectedly.
+- **Refresh:** reconnect an individual session with Refresh screen. The device
+  list updates live — no separate Refresh button.
 - **Mouse and keyboard:** an explicit control/view-only toggle, clicks,
   double-clicks, dragging, scrolling, typing and keyboard shortcuts.
   Switching away, disabling control or disconnecting releases held input.

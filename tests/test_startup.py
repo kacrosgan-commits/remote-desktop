@@ -58,6 +58,36 @@ def test_running_installed_copy_does_not_copy_onto_itself(tmp_path, monkeypatch)
     assert source.read_bytes() == b"executable"
 
 
+def test_install_stops_running_agent_before_copy(tmp_path, monkeypatch):
+    from agent import startup
+
+    source = tmp_path / "download" / "agent.exe"
+    source.parent.mkdir()
+    source.write_bytes(b"new")
+    destination = tmp_path / "Local AppData" / "RemoteDesk"
+    destination.mkdir(parents=True)
+    target = destination / "agent.exe"
+    target.write_bytes(b"old")
+    stop = Mock()
+    copies = {"n": 0}
+
+    def flaky_copy(src, dst):
+        if Path(dst).name != "agent.exe":
+            return
+        copies["n"] += 1
+        if copies["n"] == 1:
+            raise PermissionError("locked")
+        Path(dst).write_bytes(Path(src).read_bytes())
+
+    monkeypatch.setattr(startup, "install_dir", lambda: destination)
+    monkeypatch.setattr(startup, "register_startup", Mock())
+    monkeypatch.setattr(startup, "stop_installed_agent", stop)
+    monkeypatch.setattr(startup.shutil, "copy2", flaky_copy)
+    assert startup.install(source, []).read_bytes() == b"new"
+    assert stop.called
+    assert copies["n"] == 2
+
+
 def test_startup_command_quotes_windows_paths_with_spaces(monkeypatch):
     from agent import startup
 

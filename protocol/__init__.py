@@ -15,6 +15,7 @@ import json
 AUTH = "AUTH"              # client -> relay (first message; role-specific)
 DEVICE_LIST = "DEVICE_LIST"  # relay -> console: [{id, name, online}]
 PREVIEW = "PREVIEW"        # agent -> relay -> console: {device_id, jpeg} (base64)
+REMOVE_DEVICE = "REMOVE_DEVICE"  # console -> relay: drop a device from the registry
 PEER_JOINED = "PEER_JOINED"  # relay -> agent/controller
 PEER_LEFT = "PEER_LEFT"      # relay -> agent/controller
 ERROR = "ERROR"            # relay -> client {message}
@@ -95,6 +96,10 @@ def config(fps: int | None = None, quality: int | None = None) -> dict:
 def preview(device_id: str, jpeg_b64: str) -> dict:
     """Dashboard thumbnail: JPEG as base64 so consoles can fan-in many devices."""
     return {"type": PREVIEW, "device_id": device_id, "jpeg": jpeg_b64}
+
+
+def remove_device(device_id: str) -> dict:
+    return {"type": REMOVE_DEVICE, "device_id": device_id}
 
 
 KEY_NAMES = {

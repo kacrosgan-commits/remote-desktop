@@ -114,3 +114,23 @@ def test_refresh_keeps_sessions_and_reconnects_after_agent_restart(relay_url):
             console.join(timeout=4)
             assert not console.is_alive()
     asyncio.run(scenario())
+
+
+def test_console_can_remove_offline_device(relay_url):
+    async def scenario():
+        console_signals = SimpleNamespace(devices=Recorder(), status=Recorder(), preview=Recorder())
+        console = ConsoleNet(relay_url, "test-network", console_signals)
+        console.start()
+        try:
+            async with websockets.connect(relay_url) as agent:
+                await agent.send(P.dumps(P.auth_agent("test-network", "device", "Test PC")))
+                await eventually(lambda: console_signals.devices.values and
+                                 console_signals.devices.values[-1][0]["online"])
+            await eventually(lambda: console_signals.devices.values[-1] and
+                             not console_signals.devices.values[-1][0]["online"])
+            console.remove_device("device")
+            await eventually(lambda: console_signals.devices.values[-1] == [])
+        finally:
+            console.stop()
+            console.join(timeout=4)
+    asyncio.run(scenario())

@@ -84,33 +84,66 @@ class _Client(threading.Thread):
 
 
 class ConsoleNet(_Client):
-    """Refresh subscribes again to get a fresh list, even from older relays."""
+    """Dashboard client: live device list + previews; can remove devices."""
+
+    def __init__(self, url, network_key, signals):
+        super().__init__(url, network_key, signals)
+        self.outq = None
+        self._connected = False
 
     async def _session(self):
         async with websockets.connect(self.url, max_size=None, close_timeout=2) as ws:
+            self.outq = asyncio.Queue()
+            self._connected = True
             await ws.send(P.dumps(P.auth_console(self.network_key)))
-            async for message in ws:
-                if isinstance(message, bytes):
-                    continue
-                msg = P.loads(message)
-                kind = msg.get("type")
-                if kind == P.DEVICE_LIST:
-                    self.signals.devices.emit(msg.get("devices", []))
-                    self.signals.status.emit("online")
-                elif kind == P.PREVIEW:
-                    device_id = msg.get("device_id")
-                    jpeg_b64 = msg.get("jpeg")
-                    if device_id and jpeg_b64:
-                        try:
-                            self.signals.preview.emit(
-                                device_id, base64.b64decode(jpeg_b64))
-                        except Exception:
-                            pass
-                elif kind == P.ERROR:
-                    raise RuntimeError(msg.get("message", "relay error"))
+            await run_pair(self._recv(ws), self._send(ws))
+
+    async def _recv(self, ws):
+        async for message in ws:
+            if isinstance(message, bytes):
+                continue
+            msg = P.loads(message)
+            kind = msg.get("type")
+            if kind == P.DEVICE_LIST:
+                self.signals.devices.emit(msg.get("devices", []))
+                self.signals.status.emit("online")
+            elif kind == P.PREVIEW:
+                device_id = msg.get("device_id")
+                jpeg_b64 = msg.get("jpeg")
+                if device_id and jpeg_b64:
+                    try:
+                        self.signals.preview.emit(
+                            device_id, base64.b64decode(jpeg_b64))
+                    except Exception:
+                        pass
+            elif kind == P.ERROR:
+                raise RuntimeError(msg.get("message", "relay error"))
+
+    async def _send(self, ws):
+        while True:
+            msg = await self.outq.get()
+            await ws.send(P.dumps(msg))
 
     def _disconnected(self):
+        self._connected = False
+        self.outq = None
         self.signals.devices.emit([])
+
+    def send_json(self, msg: dict):
+        queue = self.outq
+
+        def enqueue():
+            if self._connected and queue is not None and queue is self.outq:
+                queue.put_nowait(msg)
+
+        if self.loop is not None and self._connected:
+            try:
+                self.loop.call_soon_threadsafe(enqueue)
+            except RuntimeError:
+                pass
+
+    def remove_device(self, device_id: str):
+        self.send_json(P.remove_device(device_id))
 
 
 class Net(_Client):

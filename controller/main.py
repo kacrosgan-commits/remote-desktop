@@ -10,7 +10,7 @@ import sys
 import os
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QBrush, QKeySequence, QShortcut, QImage, QPainter
+from PySide6.QtGui import QColor, QBrush, QImage, QPainter
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QPushButton, QListWidget, QListWidgetItem, QTabWidget,
@@ -106,6 +106,18 @@ QPushButton#ViewBtn:hover { background: #1d4ed8; }
 QPushButton#ViewBtn:disabled {
     background: #e5e7eb;
     color: #9ca3af;
+}
+QPushButton#RemoveBtn {
+    background: #ffffff;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-weight: 600;
+}
+QPushButton#RemoveBtn:hover {
+    background: #fef2f2;
+    border-color: #f87171;
 }
 QToolButton#ViewToggle {
     background: transparent;
@@ -248,14 +260,6 @@ class Dashboard(QWidget):
         self.connect_btn.setObjectName("PrimaryBtn")
         self.connect_btn.clicked.connect(self._start_console)
         row.addWidget(self.connect_btn)
-        self.refresh_btn = QPushButton("Refresh")
-        self.refresh_btn.setObjectName("SecondaryBtn")
-        self.refresh_btn.setToolTip("Reload devices from the relay (F5)")
-        self.refresh_btn.clicked.connect(self._start_console)
-        row.addWidget(self.refresh_btn)
-        self.refresh_shortcut = QShortcut(QKeySequence("F5"), self)
-        self.refresh_shortcut.setContext(Qt.WidgetWithChildrenShortcut)
-        self.refresh_shortcut.activated.connect(self._start_console)
         root.addWidget(top)
 
         self.status = QLabel("not connected")
@@ -267,8 +271,8 @@ class Dashboard(QWidget):
 
         side = QFrame()
         side.setObjectName("SidePanel")
-        side.setMinimumWidth(220)
-        side.setMaximumWidth(320)
+        side.setMinimumWidth(240)
+        side.setMaximumWidth(340)
         side_layout = QVBoxLayout(side)
         side_layout.setContentsMargins(12, 12, 12, 12)
         self.side_title = QLabel("Devices (0)")
@@ -279,6 +283,12 @@ class Dashboard(QWidget):
         self.list.itemDoubleClicked.connect(self._connect_selected)
         self.list.itemClicked.connect(self._focus_card)
         side_layout.addWidget(self.list, 1)
+        self.remove_btn = QPushButton("Remove selected")
+        self.remove_btn.setObjectName("RemoveBtn")
+        self.remove_btn.setToolTip(
+            "Remove this PC from the list. Offline PCs stay gone until they reconnect.")
+        self.remove_btn.clicked.connect(self._remove_selected)
+        side_layout.addWidget(self.remove_btn)
         body.addWidget(side)
 
         screens = QFrame()
@@ -351,7 +361,7 @@ class Dashboard(QWidget):
                                 "Enter both the Relay URL and the Network Key.")
             return
         store.save(relay, key)
-        self.status.setText("refreshing devices…")
+        self.status.setText("connecting…")
         if self.console and self._credentials == (relay, key):
             self.console.reconnect()
             return
@@ -372,6 +382,12 @@ class Dashboard(QWidget):
     def _update_devices(self, devices: list):
         devices = sorted(devices, key=lambda d: (not d["online"], d["name"].lower()))
         seen = set()
+        selected_id = None
+        current = self.list.currentItem()
+        if current is not None:
+            data = current.data(Qt.UserRole)
+            if data:
+                selected_id = data.get("id")
         self.list.clear()
         for d in devices:
             seen.add(d["id"])
@@ -384,7 +400,7 @@ class Dashboard(QWidget):
             else:
                 card.update_device(d)
 
-            item = QListWidgetItem(d["name"])
+            item = QListWidgetItem()
             item.setData(Qt.UserRole, d)
             online = bool(d["online"])
             item.setText(f"{'●' if online else '○'}  {d['name']}"
@@ -392,6 +408,8 @@ class Dashboard(QWidget):
             if not online:
                 item.setForeground(QBrush(QColor(150, 150, 150)))
             self.list.addItem(item)
+            if d["id"] == selected_id:
+                self.list.setCurrentItem(item)
 
         for device_id in list(self._cards):
             if device_id not in seen:
@@ -405,6 +423,47 @@ class Dashboard(QWidget):
         self.side_title.setText(f"Devices ({count})")
         self.screens_title.setText(f"All Screens ({online_count})")
         self._relayout_cards()
+
+    def _remove_selected(self):
+        item = self.list.currentItem()
+        if item is None:
+            QMessageBox.information(self, "Remove",
+                                    "Select a computer in the list first.")
+            return
+        device = item.data(Qt.UserRole) or {}
+        self._remove_device(device)
+
+    def _remove_device(self, device: dict):
+        if not device or not device.get("id"):
+            return
+        if self.console is None or not self._credentials:
+            QMessageBox.warning(self, "Not connected",
+                                "Connect to the relay first.")
+            return
+        name = device.get("name", "Device")
+        if device.get("online"):
+            answer = QMessageBox.question(
+                self, "Remove online PC?",
+                f"{name} is online.\n\n"
+                "Removing it clears it from the list and disconnects any "
+                "control session. If the agent is still running it will "
+                "reappear in a few seconds.\n\nContinue?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if answer != QMessageBox.Yes:
+                return
+        else:
+            answer = QMessageBox.question(
+                self, "Remove PC?",
+                f"Remove {name} from the list?\n\n"
+                "It will show again only if that agent reconnects.",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if answer != QMessageBox.Yes:
+                return
+        # Close any open control tab for this device.
+        window = self.window()
+        if isinstance(window, MainWindow):
+            window.close_device_session(device["id"])
+        self.console.remove_device(device["id"])
 
     def _relayout_cards(self):
         # Detach from both layouts, then re-add in current mode.
@@ -501,6 +560,12 @@ class MainWindow(QMainWindow):
             w.shutdown()
         self.tabs.removeTab(index)
         w.deleteLater()
+
+    def close_device_session(self, device_id: str):
+        for i in range(self.tabs.count() - 1, 0, -1):
+            w = self.tabs.widget(i)
+            if isinstance(w, RemoteSession) and w.device.get("id") == device_id:
+                self._close_tab(i)
 
     def closeEvent(self, e):
         if self.dashboard.console:
