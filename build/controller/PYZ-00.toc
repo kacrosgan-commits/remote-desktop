@@ -1,0 +1,1115 @@
+('F:\\remotedesk\\build\\controller\\PYZ-00.pyz',
+ [('PySide6',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\PySide6\\__init__.py',
+   'PYMODULE'),
+  ('PySide6.support',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\PySide6\\support\\__init__.py',
+   'PYMODULE'),
+  ('PySide6.support.deprecated',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\PySide6\\support\\deprecated.py',
+   'PYMODULE'),
+  ('__future__',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\__future__.py',
+   'PYMODULE'),
+  ('_aix_support',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_aix_support.py',
+   'PYMODULE'),
+  ('_ast_unparse',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_ast_unparse.py',
+   'PYMODULE'),
+  ('_colorize',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_colorize.py',
+   'PYMODULE'),
+  ('_compat_pickle',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_compat_pickle.py',
+   'PYMODULE'),
+  ('_opcode_metadata',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_opcode_metadata.py',
+   'PYMODULE'),
+  ('_py_abc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_py_abc.py',
+   'PYMODULE'),
+  ('_py_warnings',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_py_warnings.py',
+   'PYMODULE'),
+  ('_pydatetime',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_pydatetime.py',
+   'PYMODULE'),
+  ('_pydecimal',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_pydecimal.py',
+   'PYMODULE'),
+  ('_pyi_rth_utils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\PyInstaller\\fake-modules\\_pyi_rth_utils\\__init__.py',
+   'PYMODULE'),
+  ('_pyi_rth_utils.qt',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\PyInstaller\\fake-modules\\_pyi_rth_utils\\qt.py',
+   'PYMODULE'),
+  ('_strptime',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_strptime.py',
+   'PYMODULE'),
+  ('_threading_local',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\_threading_local.py',
+   'PYMODULE'),
+  ('annotationlib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\annotationlib.py',
+   'PYMODULE'),
+  ('argparse',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\argparse.py',
+   'PYMODULE'),
+  ('ast',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ast.py',
+   'PYMODULE'),
+  ('asyncio',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\__init__.py',
+   'PYMODULE'),
+  ('asyncio.base_events',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\base_events.py',
+   'PYMODULE'),
+  ('asyncio.base_futures',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\base_futures.py',
+   'PYMODULE'),
+  ('asyncio.base_subprocess',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\base_subprocess.py',
+   'PYMODULE'),
+  ('asyncio.base_tasks',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\base_tasks.py',
+   'PYMODULE'),
+  ('asyncio.constants',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\constants.py',
+   'PYMODULE'),
+  ('asyncio.coroutines',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\coroutines.py',
+   'PYMODULE'),
+  ('asyncio.events',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\events.py',
+   'PYMODULE'),
+  ('asyncio.exceptions',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\exceptions.py',
+   'PYMODULE'),
+  ('asyncio.format_helpers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\format_helpers.py',
+   'PYMODULE'),
+  ('asyncio.futures',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\futures.py',
+   'PYMODULE'),
+  ('asyncio.graph',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\graph.py',
+   'PYMODULE'),
+  ('asyncio.locks',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\locks.py',
+   'PYMODULE'),
+  ('asyncio.log',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\log.py',
+   'PYMODULE'),
+  ('asyncio.mixins',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\mixins.py',
+   'PYMODULE'),
+  ('asyncio.proactor_events',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\proactor_events.py',
+   'PYMODULE'),
+  ('asyncio.protocols',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\protocols.py',
+   'PYMODULE'),
+  ('asyncio.queues',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\queues.py',
+   'PYMODULE'),
+  ('asyncio.runners',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\runners.py',
+   'PYMODULE'),
+  ('asyncio.selector_events',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\selector_events.py',
+   'PYMODULE'),
+  ('asyncio.sslproto',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\sslproto.py',
+   'PYMODULE'),
+  ('asyncio.staggered',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\staggered.py',
+   'PYMODULE'),
+  ('asyncio.streams',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\streams.py',
+   'PYMODULE'),
+  ('asyncio.subprocess',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\subprocess.py',
+   'PYMODULE'),
+  ('asyncio.taskgroups',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\taskgroups.py',
+   'PYMODULE'),
+  ('asyncio.tasks',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\tasks.py',
+   'PYMODULE'),
+  ('asyncio.threads',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\threads.py',
+   'PYMODULE'),
+  ('asyncio.timeouts',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\timeouts.py',
+   'PYMODULE'),
+  ('asyncio.transports',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\transports.py',
+   'PYMODULE'),
+  ('asyncio.trsock',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\trsock.py',
+   'PYMODULE'),
+  ('asyncio.unix_events',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\unix_events.py',
+   'PYMODULE'),
+  ('asyncio.windows_events',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\windows_events.py',
+   'PYMODULE'),
+  ('asyncio.windows_utils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\asyncio\\windows_utils.py',
+   'PYMODULE'),
+  ('base64',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\base64.py',
+   'PYMODULE'),
+  ('bisect',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\bisect.py',
+   'PYMODULE'),
+  ('bz2',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\bz2.py',
+   'PYMODULE'),
+  ('calendar',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\calendar.py',
+   'PYMODULE'),
+  ('codeop',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\codeop.py',
+   'PYMODULE'),
+  ('compression',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\compression\\__init__.py',
+   'PYMODULE'),
+  ('compression._common',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\compression\\_common\\__init__.py',
+   'PYMODULE'),
+  ('compression._common._streams',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\compression\\_common\\_streams.py',
+   'PYMODULE'),
+  ('compression.zstd',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\compression\\zstd\\__init__.py',
+   'PYMODULE'),
+  ('compression.zstd._zstdfile',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\compression\\zstd\\_zstdfile.py',
+   'PYMODULE'),
+  ('concurrent',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\__init__.py',
+   'PYMODULE'),
+  ('concurrent.futures',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\futures\\__init__.py',
+   'PYMODULE'),
+  ('concurrent.futures._base',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\futures\\_base.py',
+   'PYMODULE'),
+  ('concurrent.futures.interpreter',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\futures\\interpreter.py',
+   'PYMODULE'),
+  ('concurrent.futures.process',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\futures\\process.py',
+   'PYMODULE'),
+  ('concurrent.futures.thread',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\futures\\thread.py',
+   'PYMODULE'),
+  ('concurrent.interpreters',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\interpreters\\__init__.py',
+   'PYMODULE'),
+  ('concurrent.interpreters._crossinterp',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\interpreters\\_crossinterp.py',
+   'PYMODULE'),
+  ('concurrent.interpreters._queues',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\concurrent\\interpreters\\_queues.py',
+   'PYMODULE'),
+  ('config', 'F:\\remotedesk\\config.py', 'PYMODULE'),
+  ('contextlib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\contextlib.py',
+   'PYMODULE'),
+  ('contextvars',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\contextvars.py',
+   'PYMODULE'),
+  ('controller', 'F:\\remotedesk\\controller\\__init__.py', 'PYMODULE'),
+  ('controller.net', 'F:\\remotedesk\\controller\\net.py', 'PYMODULE'),
+  ('controller.store', 'F:\\remotedesk\\controller\\store.py', 'PYMODULE'),
+  ('controller.view', 'F:\\remotedesk\\controller\\view.py', 'PYMODULE'),
+  ('copy',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\copy.py',
+   'PYMODULE'),
+  ('csv',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\csv.py',
+   'PYMODULE'),
+  ('ctypes',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ctypes\\__init__.py',
+   'PYMODULE'),
+  ('ctypes._endian',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ctypes\\_endian.py',
+   'PYMODULE'),
+  ('ctypes._layout',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ctypes\\_layout.py',
+   'PYMODULE'),
+  ('dataclasses',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\dataclasses.py',
+   'PYMODULE'),
+  ('datetime',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\datetime.py',
+   'PYMODULE'),
+  ('decimal',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\decimal.py',
+   'PYMODULE'),
+  ('difflib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\difflib.py',
+   'PYMODULE'),
+  ('dis',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\dis.py',
+   'PYMODULE'),
+  ('email',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\__init__.py',
+   'PYMODULE'),
+  ('email._encoded_words',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\_encoded_words.py',
+   'PYMODULE'),
+  ('email._header_value_parser',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\_header_value_parser.py',
+   'PYMODULE'),
+  ('email._parseaddr',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\_parseaddr.py',
+   'PYMODULE'),
+  ('email._policybase',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\_policybase.py',
+   'PYMODULE'),
+  ('email.base64mime',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\base64mime.py',
+   'PYMODULE'),
+  ('email.charset',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\charset.py',
+   'PYMODULE'),
+  ('email.contentmanager',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\contentmanager.py',
+   'PYMODULE'),
+  ('email.encoders',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\encoders.py',
+   'PYMODULE'),
+  ('email.errors',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\errors.py',
+   'PYMODULE'),
+  ('email.feedparser',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\feedparser.py',
+   'PYMODULE'),
+  ('email.generator',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\generator.py',
+   'PYMODULE'),
+  ('email.header',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\header.py',
+   'PYMODULE'),
+  ('email.headerregistry',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\headerregistry.py',
+   'PYMODULE'),
+  ('email.iterators',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\iterators.py',
+   'PYMODULE'),
+  ('email.message',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\message.py',
+   'PYMODULE'),
+  ('email.parser',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\parser.py',
+   'PYMODULE'),
+  ('email.policy',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\policy.py',
+   'PYMODULE'),
+  ('email.quoprimime',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\quoprimime.py',
+   'PYMODULE'),
+  ('email.utils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\email\\utils.py',
+   'PYMODULE'),
+  ('fnmatch',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\fnmatch.py',
+   'PYMODULE'),
+  ('fractions',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\fractions.py',
+   'PYMODULE'),
+  ('ftplib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ftplib.py',
+   'PYMODULE'),
+  ('getopt',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\getopt.py',
+   'PYMODULE'),
+  ('gettext',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\gettext.py',
+   'PYMODULE'),
+  ('glob',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\glob.py',
+   'PYMODULE'),
+  ('gzip',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\gzip.py',
+   'PYMODULE'),
+  ('hashlib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\hashlib.py',
+   'PYMODULE'),
+  ('hmac',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\hmac.py',
+   'PYMODULE'),
+  ('http',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\http\\__init__.py',
+   'PYMODULE'),
+  ('http.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\http\\client.py',
+   'PYMODULE'),
+  ('http.cookiejar',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\http\\cookiejar.py',
+   'PYMODULE'),
+  ('importlib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\__init__.py',
+   'PYMODULE'),
+  ('importlib._abc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\_abc.py',
+   'PYMODULE'),
+  ('importlib._bootstrap',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\_bootstrap.py',
+   'PYMODULE'),
+  ('importlib._bootstrap_external',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\_bootstrap_external.py',
+   'PYMODULE'),
+  ('importlib.abc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\abc.py',
+   'PYMODULE'),
+  ('importlib.machinery',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\machinery.py',
+   'PYMODULE'),
+  ('importlib.metadata',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\__init__.py',
+   'PYMODULE'),
+  ('importlib.metadata._adapters',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\_adapters.py',
+   'PYMODULE'),
+  ('importlib.metadata._collections',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\_collections.py',
+   'PYMODULE'),
+  ('importlib.metadata._functools',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\_functools.py',
+   'PYMODULE'),
+  ('importlib.metadata._itertools',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\_itertools.py',
+   'PYMODULE'),
+  ('importlib.metadata._meta',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\_meta.py',
+   'PYMODULE'),
+  ('importlib.metadata._text',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\metadata\\_text.py',
+   'PYMODULE'),
+  ('importlib.readers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\readers.py',
+   'PYMODULE'),
+  ('importlib.resources',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\__init__.py',
+   'PYMODULE'),
+  ('importlib.resources._adapters',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\_adapters.py',
+   'PYMODULE'),
+  ('importlib.resources._common',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\_common.py',
+   'PYMODULE'),
+  ('importlib.resources._functional',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\_functional.py',
+   'PYMODULE'),
+  ('importlib.resources._itertools',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\_itertools.py',
+   'PYMODULE'),
+  ('importlib.resources.abc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\abc.py',
+   'PYMODULE'),
+  ('importlib.resources.readers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\resources\\readers.py',
+   'PYMODULE'),
+  ('importlib.util',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\util.py',
+   'PYMODULE'),
+  ('inspect',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\inspect.py',
+   'PYMODULE'),
+  ('ipaddress',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ipaddress.py',
+   'PYMODULE'),
+  ('json',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\json\\__init__.py',
+   'PYMODULE'),
+  ('json.decoder',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\json\\decoder.py',
+   'PYMODULE'),
+  ('json.encoder',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\json\\encoder.py',
+   'PYMODULE'),
+  ('json.scanner',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\json\\scanner.py',
+   'PYMODULE'),
+  ('logging',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\logging\\__init__.py',
+   'PYMODULE'),
+  ('lzma',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\lzma.py',
+   'PYMODULE'),
+  ('mimetypes',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\mimetypes.py',
+   'PYMODULE'),
+  ('multiprocessing',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\__init__.py',
+   'PYMODULE'),
+  ('multiprocessing.connection',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\connection.py',
+   'PYMODULE'),
+  ('multiprocessing.context',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\context.py',
+   'PYMODULE'),
+  ('multiprocessing.dummy',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\dummy\\__init__.py',
+   'PYMODULE'),
+  ('multiprocessing.dummy.connection',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\dummy\\connection.py',
+   'PYMODULE'),
+  ('multiprocessing.forkserver',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\forkserver.py',
+   'PYMODULE'),
+  ('multiprocessing.heap',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\heap.py',
+   'PYMODULE'),
+  ('multiprocessing.managers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\managers.py',
+   'PYMODULE'),
+  ('multiprocessing.pool',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\pool.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_fork',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\popen_fork.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_forkserver',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\popen_forkserver.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_spawn_posix',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\popen_spawn_posix.py',
+   'PYMODULE'),
+  ('multiprocessing.popen_spawn_win32',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\popen_spawn_win32.py',
+   'PYMODULE'),
+  ('multiprocessing.process',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\process.py',
+   'PYMODULE'),
+  ('multiprocessing.queues',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\queues.py',
+   'PYMODULE'),
+  ('multiprocessing.reduction',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\reduction.py',
+   'PYMODULE'),
+  ('multiprocessing.resource_sharer',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\resource_sharer.py',
+   'PYMODULE'),
+  ('multiprocessing.resource_tracker',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\resource_tracker.py',
+   'PYMODULE'),
+  ('multiprocessing.shared_memory',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\shared_memory.py',
+   'PYMODULE'),
+  ('multiprocessing.sharedctypes',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\sharedctypes.py',
+   'PYMODULE'),
+  ('multiprocessing.spawn',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\spawn.py',
+   'PYMODULE'),
+  ('multiprocessing.synchronize',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\synchronize.py',
+   'PYMODULE'),
+  ('multiprocessing.util',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\multiprocessing\\util.py',
+   'PYMODULE'),
+  ('netrc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\netrc.py',
+   'PYMODULE'),
+  ('numbers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\numbers.py',
+   'PYMODULE'),
+  ('opcode',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\opcode.py',
+   'PYMODULE'),
+  ('pathlib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\pathlib\\__init__.py',
+   'PYMODULE'),
+  ('pathlib._os',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\pathlib\\_os.py',
+   'PYMODULE'),
+  ('pickle',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\pickle.py',
+   'PYMODULE'),
+  ('pkgutil',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\pkgutil.py',
+   'PYMODULE'),
+  ('platform',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\platform.py',
+   'PYMODULE'),
+  ('pprint',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\pprint.py',
+   'PYMODULE'),
+  ('protocol', 'F:\\remotedesk\\protocol\\__init__.py', 'PYMODULE'),
+  ('py_compile',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\py_compile.py',
+   'PYMODULE'),
+  ('queue',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\queue.py',
+   'PYMODULE'),
+  ('quopri',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\quopri.py',
+   'PYMODULE'),
+  ('random',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\random.py',
+   'PYMODULE'),
+  ('runpy',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\runpy.py',
+   'PYMODULE'),
+  ('secrets',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\secrets.py',
+   'PYMODULE'),
+  ('selectors',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\selectors.py',
+   'PYMODULE'),
+  ('shiboken6',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\shiboken6\\__init__.py',
+   'PYMODULE'),
+  ('shutil',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\shutil.py',
+   'PYMODULE'),
+  ('signal',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\signal.py',
+   'PYMODULE'),
+  ('socket',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\socket.py',
+   'PYMODULE'),
+  ('ssl',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\ssl.py',
+   'PYMODULE'),
+  ('statistics',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\statistics.py',
+   'PYMODULE'),
+  ('string',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\string\\__init__.py',
+   'PYMODULE'),
+  ('stringprep',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\stringprep.py',
+   'PYMODULE'),
+  ('subprocess',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\subprocess.py',
+   'PYMODULE'),
+  ('sysconfig',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\sysconfig\\__init__.py',
+   'PYMODULE'),
+  ('tarfile',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\tarfile.py',
+   'PYMODULE'),
+  ('tempfile',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\tempfile.py',
+   'PYMODULE'),
+  ('textwrap',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\textwrap.py',
+   'PYMODULE'),
+  ('threading',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\threading.py',
+   'PYMODULE'),
+  ('token',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\token.py',
+   'PYMODULE'),
+  ('tokenize',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\tokenize.py',
+   'PYMODULE'),
+  ('tracemalloc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\tracemalloc.py',
+   'PYMODULE'),
+  ('typing',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\typing.py',
+   'PYMODULE'),
+  ('urllib',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\urllib\\__init__.py',
+   'PYMODULE'),
+  ('urllib.error',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\urllib\\error.py',
+   'PYMODULE'),
+  ('urllib.parse',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\urllib\\parse.py',
+   'PYMODULE'),
+  ('urllib.request',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\urllib\\request.py',
+   'PYMODULE'),
+  ('urllib.response',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\urllib\\response.py',
+   'PYMODULE'),
+  ('uuid',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\uuid.py',
+   'PYMODULE'),
+  ('websockets',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\__init__.py',
+   'PYMODULE'),
+  ('websockets.__main__',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\__main__.py',
+   'PYMODULE'),
+  ('websockets.asyncio',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\asyncio\\__init__.py',
+   'PYMODULE'),
+  ('websockets.asyncio.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\asyncio\\client.py',
+   'PYMODULE'),
+  ('websockets.asyncio.connection',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\asyncio\\connection.py',
+   'PYMODULE'),
+  ('websockets.asyncio.messages',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\asyncio\\messages.py',
+   'PYMODULE'),
+  ('websockets.asyncio.router',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\asyncio\\router.py',
+   'PYMODULE'),
+  ('websockets.asyncio.server',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\asyncio\\server.py',
+   'PYMODULE'),
+  ('websockets.auth',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\auth.py',
+   'PYMODULE'),
+  ('websockets.cli',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\cli.py',
+   'PYMODULE'),
+  ('websockets.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\client.py',
+   'PYMODULE'),
+  ('websockets.connection',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\connection.py',
+   'PYMODULE'),
+  ('websockets.datastructures',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\datastructures.py',
+   'PYMODULE'),
+  ('websockets.exceptions',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\exceptions.py',
+   'PYMODULE'),
+  ('websockets.extensions',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\extensions\\__init__.py',
+   'PYMODULE'),
+  ('websockets.extensions.base',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\extensions\\base.py',
+   'PYMODULE'),
+  ('websockets.extensions.permessage_deflate',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\extensions\\permessage_deflate.py',
+   'PYMODULE'),
+  ('websockets.frames',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\frames.py',
+   'PYMODULE'),
+  ('websockets.headers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\headers.py',
+   'PYMODULE'),
+  ('websockets.http11',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\http11.py',
+   'PYMODULE'),
+  ('websockets.imports',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\imports.py',
+   'PYMODULE'),
+  ('websockets.legacy',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\__init__.py',
+   'PYMODULE'),
+  ('websockets.legacy.auth',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\auth.py',
+   'PYMODULE'),
+  ('websockets.legacy.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\client.py',
+   'PYMODULE'),
+  ('websockets.legacy.exceptions',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\exceptions.py',
+   'PYMODULE'),
+  ('websockets.legacy.framing',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\framing.py',
+   'PYMODULE'),
+  ('websockets.legacy.handshake',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\handshake.py',
+   'PYMODULE'),
+  ('websockets.legacy.http',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\http.py',
+   'PYMODULE'),
+  ('websockets.legacy.protocol',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\protocol.py',
+   'PYMODULE'),
+  ('websockets.legacy.server',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\legacy\\server.py',
+   'PYMODULE'),
+  ('websockets.protocol',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\protocol.py',
+   'PYMODULE'),
+  ('websockets.proxy',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\proxy.py',
+   'PYMODULE'),
+  ('websockets.server',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\server.py',
+   'PYMODULE'),
+  ('websockets.streams',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\streams.py',
+   'PYMODULE'),
+  ('websockets.sync',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\__init__.py',
+   'PYMODULE'),
+  ('websockets.sync.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\client.py',
+   'PYMODULE'),
+  ('websockets.sync.connection',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\connection.py',
+   'PYMODULE'),
+  ('websockets.sync.messages',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\messages.py',
+   'PYMODULE'),
+  ('websockets.sync.router',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\router.py',
+   'PYMODULE'),
+  ('websockets.sync.server',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\server.py',
+   'PYMODULE'),
+  ('websockets.sync.utils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\sync\\utils.py',
+   'PYMODULE'),
+  ('websockets.trio',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\__init__.py',
+   'PYMODULE'),
+  ('websockets.trio.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\client.py',
+   'PYMODULE'),
+  ('websockets.trio.connection',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\connection.py',
+   'PYMODULE'),
+  ('websockets.trio.messages',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\messages.py',
+   'PYMODULE'),
+  ('websockets.trio.router',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\router.py',
+   'PYMODULE'),
+  ('websockets.trio.server',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\server.py',
+   'PYMODULE'),
+  ('websockets.trio.utils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\trio\\utils.py',
+   'PYMODULE'),
+  ('websockets.typing',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\typing.py',
+   'PYMODULE'),
+  ('websockets.uri',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\uri.py',
+   'PYMODULE'),
+  ('websockets.utils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\utils.py',
+   'PYMODULE'),
+  ('websockets.version',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\websockets\\version.py',
+   'PYMODULE'),
+  ('xml',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\__init__.py',
+   'PYMODULE'),
+  ('xml.parsers',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\parsers\\__init__.py',
+   'PYMODULE'),
+  ('xml.parsers.expat',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\parsers\\expat.py',
+   'PYMODULE'),
+  ('xml.sax',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\sax\\__init__.py',
+   'PYMODULE'),
+  ('xml.sax._exceptions',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\sax\\_exceptions.py',
+   'PYMODULE'),
+  ('xml.sax.expatreader',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\sax\\expatreader.py',
+   'PYMODULE'),
+  ('xml.sax.handler',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\sax\\handler.py',
+   'PYMODULE'),
+  ('xml.sax.saxutils',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\sax\\saxutils.py',
+   'PYMODULE'),
+  ('xml.sax.xmlreader',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xml\\sax\\xmlreader.py',
+   'PYMODULE'),
+  ('xmlrpc',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xmlrpc\\__init__.py',
+   'PYMODULE'),
+  ('xmlrpc.client',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\xmlrpc\\client.py',
+   'PYMODULE'),
+  ('zipfile',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\zipfile\\__init__.py',
+   'PYMODULE'),
+  ('zipfile._path',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\zipfile\\_path\\__init__.py',
+   'PYMODULE'),
+  ('zipfile._path.glob',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\zipfile\\_path\\glob.py',
+   'PYMODULE'),
+  ('zipimport',
+   'C:\\Users\\Kakamora '
+   'DR\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\zipimport.py',
+   'PYMODULE')])

@@ -1,0 +1,6 @@
+# Put this on your VPS. Caddy fetches a TLS cert automatically and
+# reverse-proxies WSS -> the uvicorn relay. Point remotedesk.example.com
+# at your VPS's public IP first (DNS A record).
+remotedesk.example.com {
+    reverse_proxy 127.0.0.1:8000
+}
