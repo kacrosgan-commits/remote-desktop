@@ -88,6 +88,31 @@ def test_install_stops_running_agent_before_copy(tmp_path, monkeypatch):
     assert copies["n"] == 2
 
 
+def test_install_renames_locked_binary_then_replaces(tmp_path, monkeypatch):
+    from agent import startup
+
+    source = tmp_path / "download" / "agent.exe"
+    source.parent.mkdir()
+    source.write_bytes(b"new-bytes")
+    destination = tmp_path / "Local AppData" / "RemoteDesk"
+    destination.mkdir(parents=True)
+    target = destination / "agent.exe"
+    target.write_bytes(b"old-bytes")
+
+    def always_locked_onto_agent(src, dst):
+        if Path(dst).resolve() == target.resolve() and target.exists():
+            raise PermissionError("cannot overwrite running image")
+        Path(dst).write_bytes(Path(src).read_bytes())
+
+    monkeypatch.setattr(startup, "install_dir", lambda: destination)
+    monkeypatch.setattr(startup, "register_startup", Mock())
+    monkeypatch.setattr(startup, "stop_installed_agent", Mock())
+    monkeypatch.setattr(startup.shutil, "copy2", always_locked_onto_agent)
+    installed = startup.install(source, [])
+    assert installed.read_bytes() == b"new-bytes"
+    assert not (destination / "agent.exe.old").exists()
+
+
 def test_startup_command_quotes_windows_paths_with_spaces(monkeypatch):
     from agent import startup
 

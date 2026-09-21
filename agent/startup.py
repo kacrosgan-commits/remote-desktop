@@ -131,21 +131,40 @@ def unregister_startup():
 
 
 def stop_installed_agent(target: Path):
-    """Stop a previously installed agent so its exe can be overwritten on update."""
+    """Stop a previously installed agent so its exe can be overwritten on update.
+
+    The agent is often a background process (easy to miss in Task Manager's
+    Apps list). The logon task may also relaunch it after a kill, so disable
+    the task for the duration of the update.
+    """
     if sys.platform != "win32":
         return
-    # Prevent the logon task from immediately relaunching the old binary.
+    subprocess.run(
+        ["schtasks", "/Change", "/TN", TASK_NAME, "/DISABLE"],
+        check=False, capture_output=True, text=True,
+    )
     subprocess.run(
         ["schtasks", "/End", "/TN", TASK_NAME],
         check=False, capture_output=True, text=True,
     )
+    # Broad kill by image name first (covers path/casing mismatches).
+    subprocess.run(
+        ["taskkill", "/F", "/IM", "agent.exe", "/T"],
+        check=False, capture_output=True, text=True,
+    )
     target_path = str(target.resolve())
+    # Case-insensitive path match; also any agent under %LOCALAPPDATA%\RemoteDesk.
     script = (
         "$ErrorActionPreference = 'SilentlyContinue'; "
-        f"$target = {target_path!r}; "
-        "Get-Process -Name agent | Where-Object { $_.Path -eq $target } | "
-        "Stop-Process -Force; "
-        "Start-Sleep -Milliseconds 900"
+        f"$target = [System.IO.Path]::GetFullPath({target_path!r}); "
+        "$folder = Split-Path -Parent $target; "
+        "Get-Process | Where-Object { "
+        "  $_.Path -and ("
+        "    ([string]::Compare($_.Path, $target, $true) -eq 0) -or "
+        "    ($_.Path -like ($folder + '\\*') -and $_.ProcessName -eq 'agent')"
+        "  )"
+        "} | Stop-Process -Force; "
+        "Start-Sleep -Milliseconds 1200"
     )
     subprocess.run(
         ["powershell", "-NoProfile", "-Command", script],
@@ -153,38 +172,75 @@ def stop_installed_agent(target: Path):
     )
 
 
+def _replace_executable(source: Path, target: Path):
+    """Copy source onto target, even if Windows still has the old file open.
+
+    Strategy:
+      1) stop processes / disable restart task
+      2) direct copy
+      3) if locked: rename old exe -> agent.exe.old (usually allowed while
+         running on Windows), then copy the new binary into place
+    """
+    stale = target.with_name(target.name + ".old")
+    last_error = None
+    for attempt in range(6):
+        stop_installed_agent(target)
+        # Drop leftovers from a previous interrupted update.
+        try:
+            if stale.exists():
+                stale.unlink()
+        except OSError:
+            pass
+        try:
+            shutil.copy2(source, target)
+            return
+        except PermissionError as exc:
+            last_error = exc
+        # Rename-away the locked binary, then write the new one beside it.
+        try:
+            if target.exists():
+                if stale.exists():
+                    try:
+                        stale.unlink()
+                    except OSError:
+                        stale = target.with_name(f"{target.name}.{attempt}.old")
+                target.rename(stale)
+            shutil.copy2(source, target)
+            # Best-effort cleanup; the old process may still hold .old open.
+            try:
+                if stale.exists():
+                    stale.unlink()
+            except OSError:
+                pass
+            return
+        except OSError as exc:
+            last_error = exc
+    raise RuntimeError(
+        "Could not update the installed RemoteDesk agent.\n\n"
+        "Windows still has the old file locked (background agent, scheduled "
+        "task, or antivirus).\n\n"
+        "Fix:\n"
+        "1. Open Task Manager → Details tab → end every \"agent.exe\".\n"
+        "2. Or run:  %LOCALAPPDATA%\\RemoteDesk\\uninstall-agent.bat\n"
+        "3. Then double-click the new agent.exe again.\n\n"
+        "If it still fails, temporarily pause Windows Defender real-time "
+        "protection and retry."
+    ) from last_error
+
+
 def install(source: Path, arguments: list[str]) -> Path:
     destination = install_dir()
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / "agent.exe"
     if source.resolve() != target.resolve():
-        # Old agent.exe holds a file lock while running — stop it, then copy.
-        last_error = None
-        for attempt in range(5):
-            if attempt:
-                stop_installed_agent(target)
-            elif target.exists():
-                stop_installed_agent(target)
-            try:
-                shutil.copy2(source, target)
-                last_error = None
-                break
-            except PermissionError as exc:
-                last_error = exc
-        if last_error is not None:
-            raise RuntimeError(
-                "Could not update the installed RemoteDesk agent because it is "
-                "still running.\n\n"
-                "Open Task Manager, end \"agent.exe\" (RemoteDesk), then launch "
-                "the new agent.exe again.\n\n"
-                "Or run uninstall-agent.bat in %LOCALAPPDATA%\\RemoteDesk first."
-            ) from last_error
+        _replace_executable(source, target)
     (destination / "arguments.json").write_text(
         json.dumps(arguments), encoding="utf-8")
     resources = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
     uninstaller = resources / "uninstall-agent.bat"
     if uninstaller.exists() and uninstaller.resolve() != (destination / uninstaller.name).resolve():
         shutil.copy2(uninstaller, destination / uninstaller.name)
+    # Re-enable / recreate startup (task was disabled during the update).
     register_startup(target)
     return target
 
@@ -225,6 +281,13 @@ def prepare(arguments: list[str], validate) -> list[str] | None:
         return runtime
     source = Path(sys.executable)
     if options.run:
+        # Clean leftovers from an in-place update while the old process was alive.
+        try:
+            stale = source.with_name(source.name + ".old")
+            if stale.exists():
+                stale.unlink()
+        except OSError:
+            pass
         return saved_arguments(source.parent) + runtime
     if not options.install and source.resolve() == (install_dir() / "agent.exe").resolve():
         return saved_arguments(source.parent) + runtime
