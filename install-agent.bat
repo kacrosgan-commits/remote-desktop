@@ -19,4 +19,4 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo Installation started. If a confirmation dialog appeared, the agent is installing.
+echo RemoteDesk Agent installed and starting in the background.

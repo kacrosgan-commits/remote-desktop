@@ -18,8 +18,8 @@ update must be built on Windows before these new features are available in an ex
 1. If you installed the old scheduled-task version, run the new
    `uninstall-agent.bat` as Administrator once before installing this version.
 2. Double-click the **newly built** `agent.exe` once, as the Windows user
-   whose desktop you want to control. It installs in
-   `%LOCALAPPDATA%\RemoteDesk`, starts, and shows an installation confirmation.
+   whose desktop you want to control. It installs silently in
+   `%LOCALAPPDATA%\RemoteDesk` and starts in the background (no success dialog).
    If an older agent is already running, the new exe stops it and replaces it
    automatically — you no longer need to close it by hand first.
 3. After subsequent restarts, it starts automatically when **that user signs in**.

@@ -367,15 +367,25 @@ class Dashboard(QWidget):
             return
         if self.console:
             self.console.stop()
+            self.console = None
+        if getattr(self, "signals", None) is not None:
+            try:
+                self.signals.devices.disconnect()
+                self.signals.preview.disconnect()
+                self.signals.status.disconnect()
+            except (RuntimeError, TypeError):
+                pass
         self._credentials = (relay, key)
-        self.signals = ConsoleSignals()
-        signals = self.signals
-        signals.devices.connect(lambda devices: self._update_devices(devices)
-                                if self.signals is signals else None)
-        signals.preview.connect(lambda did, jpeg: self._on_preview(did, jpeg)
-                                if self.signals is signals else None)
-        signals.status.connect(lambda status: self.status.setText(status)
-                               if self.signals is signals else None)
+        # Parent to this widget so queued slots run on the GUI thread.
+        self.signals = ConsoleSignals(self)
+        # IMPORTANT: connect to real QObject methods with QueuedConnection.
+        # Lambdas run on the network thread and cannot paint QWidget previews.
+        self.signals.devices.connect(
+            self._update_devices, Qt.ConnectionType.QueuedConnection)
+        self.signals.preview.connect(
+            self._on_preview, Qt.ConnectionType.QueuedConnection)
+        self.signals.status.connect(
+            self.status.setText, Qt.ConnectionType.QueuedConnection)
         self.console = ConsoleNet(relay, key, self.signals)
         self.console.start()
 
@@ -494,10 +504,12 @@ class Dashboard(QWidget):
         if self._grid_mode and self._cards:
             self._relayout_cards()
 
-    def _on_preview(self, device_id: str, jpeg: bytes):
+    def _on_preview(self, device_id: str, jpeg):
+        if not isinstance(jpeg, (bytes, bytearray, memoryview)):
+            return
         card = self._cards.get(device_id)
         if card is not None:
-            card.set_preview(jpeg)
+            card.set_preview(bytes(jpeg))
 
     def _focus_card(self, item: QListWidgetItem):
         d = item.data(Qt.UserRole)

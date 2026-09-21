@@ -84,6 +84,12 @@ async def broadcast_preview(net: Network, text: str):
             net.consoles.discard(c)
 
 
+async def _preview_from_jpeg(net: Network, device_id: str, jpeg: bytes):
+    import base64
+    await broadcast_preview(net, P.dumps(P.preview(
+        device_id, base64.b64encode(jpeg).decode("ascii"))))
+
+
 @app.get("/healthz")
 async def healthz():
     return {"ok": True, "networks": len(networks)}
@@ -153,6 +159,9 @@ async def _handle_agent(ws: WebSocket, net: Network, auth: dict):
                 c = dev.controller
                 if c is not None:
                     await c.send_bytes(m["bytes"])
+                else:
+                    # Idle binary frames (preview-sized) feed the dashboard.
+                    await _preview_from_jpeg(net, device_id, m["bytes"])
             elif m.get("text") is not None:
                 text = m["text"]
                 try:

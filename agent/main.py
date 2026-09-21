@@ -139,8 +139,12 @@ class Agent:
                 except Exception as e:
                     log.error(f"preview capture error: {e!r}")
                 else:
+                    # JSON PREVIEW for dashboards; also raw JPEG so relays that
+                    # fan idle binary frames still show a thumbnail.
                     await ws.send(P.dumps(P.preview(
                         self.device_id, base64.b64encode(jpeg).decode("ascii"))))
+                    if not self._peer_present:
+                        await ws.send(jpeg)
                 next_preview = now + 1 / PREVIEW_FPS
 
             if self._peer_present:

@@ -321,12 +321,6 @@ def prepare(arguments: list[str], validate) -> list[str] | None:
     environment["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
     if ready:
         subprocess.Popen([str(target), "--run"], cwd=target.parent, env=environment)
-        notify(
-            "RemoteDesk Agent is installed and starting.\n\n"
-            "It will start automatically when this Windows user signs in after a restart,\n"
-            "and will restart itself if it stops unexpectedly.\n"
-            f"Installed in: {target.parent}\n\n"
-            "To remove it, run uninstall-agent.bat in that folder.")
     else:
         finish = target.parent / "finish-install.cmd"
         # Detached so this installer can exit before the swap touches agent.exe.
@@ -338,11 +332,8 @@ def prepare(arguments: list[str], validate) -> list[str] | None:
             | getattr(subprocess, "DETACHED_PROCESS", 0),
             close_fds=True,
         )
-        notify(
-            "RemoteDesk Agent is updating.\n\n"
-            "The previous agent was still in use, so Windows will finish the\n"
-            "update in a couple of seconds and then start the new agent.\n\n"
-            f"Installed in: {target.parent}")
+    # No success MessageBox — agent installs/starts silently in the background.
+    # Failures still show via notify(..., error=True) from agent.main.
     return None
 
 

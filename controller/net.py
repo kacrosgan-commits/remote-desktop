@@ -12,7 +12,8 @@ from protocol.connection import run_pair
 
 class ConsoleSignals(QObject):
     devices = Signal(list)
-    preview = Signal(str, bytes)  # device_id, jpeg bytes
+    # object (not bytes): safer across queued cross-thread deliveries in PySide.
+    preview = Signal(str, object)  # device_id, jpeg bytes
     status = Signal(str)
 
 

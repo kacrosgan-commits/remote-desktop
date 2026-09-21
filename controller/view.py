@@ -192,7 +192,7 @@ class RemoteSession(QWidget):
     def __init__(self, relay_url: str, network_key: str, device: dict):
         super().__init__()
         self.device = device  # {id, name, online}
-        self.signals = Signals()
+        self.signals = Signals(self)
         self.net = Net(relay_url, network_key, device["id"], self.signals)
         self.view = RemoteView(self.net)
         self._connected = False
@@ -238,9 +238,9 @@ class RemoteSession(QWidget):
         layout.addWidget(QLabel("Click the remote screen to type. Ctrl+Shift+Esc releases control."))
         layout.addWidget(self.view, 1)
 
-        self.signals.frame.connect(self.view.set_frame)
-        self.signals.status.connect(self.status.setText)
-        self.signals.peer.connect(self._on_peer)
+        self.signals.frame.connect(self.view.set_frame, Qt.ConnectionType.QueuedConnection)
+        self.signals.status.connect(self.status.setText, Qt.ConnectionType.QueuedConnection)
+        self.signals.peer.connect(self._on_peer, Qt.ConnectionType.QueuedConnection)
         self.net.start()
 
     def _toggle_block(self, checked: bool):
