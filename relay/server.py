@@ -208,12 +208,18 @@ async def _handle_console(ws: WebSocket, net: Network):
                 msg = P.loads(m["text"])
             except Exception:
                 continue
-            if not isinstance(msg, dict) or msg.get("type") != P.REMOVE_DEVICE:
+            if not isinstance(msg, dict):
                 continue
-            device_id = msg.get("device_id")
-            if not device_id or device_id not in net.devices:
-                continue
-            await _remove_device(net, device_id)
+            kind = msg.get("type")
+            if kind == P.REQUEST_DEVICES:
+                await _send(ws, P.device_list([
+                    {"id": did, "name": d.name, "online": d.online}
+                    for did, d in net.devices.items()
+                ]))
+            elif kind == P.REMOVE_DEVICE:
+                device_id = msg.get("device_id")
+                if device_id and device_id in net.devices:
+                    await _remove_device(net, device_id)
     except WebSocketDisconnect:
         pass
     except Exception:

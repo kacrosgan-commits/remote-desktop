@@ -87,6 +87,9 @@ class _Client(threading.Thread):
 class ConsoleNet(_Client):
     """Dashboard client: live device list + previews; can remove devices."""
 
+    # How often to ask the relay for a fresh list (backup if a push was missed).
+    SYNC_INTERVAL_SEC = 3.0
+
     def __init__(self, url, network_key, signals):
         super().__init__(url, network_key, signals)
         self.outq = None
@@ -97,7 +100,28 @@ class ConsoleNet(_Client):
             self.outq = asyncio.Queue()
             self._connected = True
             await ws.send(P.dumps(P.auth_console(self.network_key)))
-            await run_pair(self._recv(ws), self._send(ws))
+            # Do NOT use run_pair here: if the sender task fails, FIRST_COMPLETED
+            # would cancel the receiver and drop live DEVICE_LIST pushes.
+            sender = asyncio.create_task(self._send(ws))
+            poller = asyncio.create_task(self._poll_devices())
+            try:
+                await self._recv(ws)
+            finally:
+                self._connected = False
+                poller.cancel()
+                sender.cancel()
+                await asyncio.gather(sender, poller, return_exceptions=True)
+
+    async def _poll_devices(self):
+        """Actively re-sync so newly installed agents appear without clicking Connect."""
+        while True:
+            await asyncio.sleep(self.SYNC_INTERVAL_SEC)
+            queue = self.outq
+            if self._connected and queue is not None:
+                try:
+                    queue.put_nowait(P.request_devices())
+                except Exception:
+                    pass
 
     async def _recv(self, ws):
         async for message in ws:
@@ -128,7 +152,11 @@ class ConsoleNet(_Client):
     def _disconnected(self):
         self._connected = False
         self.outq = None
-        self.signals.devices.emit([])
+        if self._stopping.is_set():
+            self.signals.devices.emit([])
+        # Keep the last device list on screen during reconnect. Emitting [] on
+        # every blip raced with the next DEVICE_LIST and hid newly joined agents.
+        self.signals.status.emit("disconnected — reconnecting…")
 
     def send_json(self, msg: dict):
         queue = self.outq
@@ -145,6 +173,9 @@ class ConsoleNet(_Client):
 
     def remove_device(self, device_id: str):
         self.send_json(P.remove_device(device_id))
+
+    def request_devices(self):
+        self.send_json(P.request_devices())
 
 
 class Net(_Client):

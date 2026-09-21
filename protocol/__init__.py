@@ -16,6 +16,7 @@ AUTH = "AUTH"              # client -> relay (first message; role-specific)
 DEVICE_LIST = "DEVICE_LIST"  # relay -> console: [{id, name, online}]
 PREVIEW = "PREVIEW"        # agent -> relay -> console: {device_id, jpeg} (base64)
 REMOVE_DEVICE = "REMOVE_DEVICE"  # console -> relay: drop a device from the registry
+REQUEST_DEVICES = "REQUEST_DEVICES"  # console -> relay: ask for a fresh DEVICE_LIST
 PEER_JOINED = "PEER_JOINED"  # relay -> agent/controller
 PEER_LEFT = "PEER_LEFT"      # relay -> agent/controller
 ERROR = "ERROR"            # relay -> client {message}
@@ -100,6 +101,10 @@ def preview(device_id: str, jpeg_b64: str) -> dict:
 
 def remove_device(device_id: str) -> dict:
     return {"type": REMOVE_DEVICE, "device_id": device_id}
+
+
+def request_devices() -> dict:
+    return {"type": REQUEST_DEVICES}
 
 
 KEY_NAMES = {

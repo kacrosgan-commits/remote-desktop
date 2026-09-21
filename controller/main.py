@@ -294,9 +294,15 @@ class Dashboard(QWidget):
         self.remove_btn = QPushButton("Remove selected")
         self.remove_btn.setObjectName("RemoveBtn")
         self.remove_btn.setToolTip(
-            "Remove this PC from the list. Offline PCs stay gone until they reconnect.")
+            "Hide this PC from the dashboard. Use Show removed to bring it back.")
         self.remove_btn.clicked.connect(self._remove_selected)
         side_layout.addWidget(self.remove_btn)
+        self.show_removed_btn = QPushButton("Show removed")
+        self.show_removed_btn.setObjectName("SecondaryBtn")
+        self.show_removed_btn.setToolTip(
+            "Un-hide PCs removed earlier (needed after reinstalling agent on the same PC).")
+        self.show_removed_btn.clicked.connect(self._show_removed)
+        side_layout.addWidget(self.show_removed_btn)
         body.addWidget(side)
 
         screens = QFrame()
@@ -530,6 +536,16 @@ class Dashboard(QWidget):
         # Optimistic local update (don't wait for relay round-trip).
         remaining = [d for d in self._devices.values() if d["id"] != device_id]
         self._update_devices(remaining)
+
+    def _show_removed(self):
+        if not self._hidden:
+            QMessageBox.information(self, "Show removed",
+                                    "No removed computers are hidden.")
+            return
+        self._hidden = store.clear_hidden()
+        if self.console is not None:
+            self.console.request_devices()
+        self.status.setText("showing removed computers…")
 
     def _relayout_cards(self):
         # Detach from both layouts, then re-add in current mode.

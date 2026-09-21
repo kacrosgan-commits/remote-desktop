@@ -89,6 +89,12 @@ def test_refresh_keeps_sessions_and_reconnects_after_agent_restart(relay_url):
                                  console_signals.devices.values[-1][0]["online"])
                 assert session_signals.peer.values == [True]
 
+                # Fresh list on demand (live sync backup).
+                before = len(console_signals.devices.values)
+                console.request_devices()
+                await eventually(lambda: len(console_signals.devices.values) > before and
+                                 console_signals.devices.values[-1][0]["id"] == "device")
+
                 # Refresh the screen: old control session ends before a new one starts.
                 session.reconnect()
                 assert (await receive(agent))["type"] == P.PEER_LEFT

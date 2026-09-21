@@ -59,3 +59,9 @@ def unhide_device(device_id: str) -> set[str]:
     relay, key = load()
     save(relay, key, hidden)
     return hidden
+
+
+def clear_hidden() -> set[str]:
+    relay, key = load()
+    save(relay, key, set())
+    return set()
