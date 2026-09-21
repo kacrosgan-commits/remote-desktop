@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from controller import store  # noqa: E402
 import config  # noqa: E402
-from controller.net import ConsoleNet, ConsoleSignals  # noqa: E402
+from controller.net import ConsoleNet, ConsoleSignals, PreviewFeed  # noqa: E402
 from controller.view import RemoteSession  # noqa: E402
 
 
@@ -175,6 +175,7 @@ class ScreenThumb(QWidget):
 
 class DeviceCard(QFrame):
     view_requested = Signal(dict)
+    remove_requested = Signal(dict)
 
     def __init__(self, device: dict):
         super().__init__()
@@ -200,6 +201,10 @@ class DeviceCard(QFrame):
         self.view_btn.setObjectName("ViewBtn")
         self.view_btn.clicked.connect(lambda: self.view_requested.emit(self.device))
         footer.addWidget(self.view_btn)
+        self.remove_btn = QPushButton("Remove")
+        self.remove_btn.setObjectName("RemoveBtn")
+        self.remove_btn.clicked.connect(lambda: self.remove_requested.emit(self.device))
+        footer.addWidget(self.remove_btn)
         layout.addLayout(footer)
         self._apply_status()
 
@@ -232,6 +237,9 @@ class Dashboard(QWidget):
         self._credentials = None
         self._devices: dict[str, dict] = {}
         self._cards: dict[str, DeviceCard] = {}
+        self._previews: dict[str, PreviewFeed] = {}
+        self._hidden: set[str] = store.load_hidden()
+        self._paused_previews: set[str] = set()  # View tab open for these
         self._grid_mode = True
         relay, network_key = store.load()
         if not relay:
@@ -390,6 +398,9 @@ class Dashboard(QWidget):
         self.console.start()
 
     def _update_devices(self, devices: list):
+        # Drop locally-hidden devices so Remove stays in sync even if the agent
+        # reconnects (online remove would otherwise make the PC reappear).
+        devices = [d for d in devices if d.get("id") not in self._hidden]
         devices = sorted(devices, key=lambda d: (not d["online"], d["name"].lower()))
         seen = set()
         selected_id = None
@@ -406,6 +417,7 @@ class Dashboard(QWidget):
             if card is None:
                 card = DeviceCard(d)
                 card.view_requested.connect(self._open_device)
+                card.remove_requested.connect(self._remove_device)
                 self._cards[d["id"]] = card
             else:
                 card.update_device(d)
@@ -423,6 +435,7 @@ class Dashboard(QWidget):
 
         for device_id in list(self._cards):
             if device_id not in seen:
+                self._stop_preview(device_id)
                 card = self._cards.pop(device_id)
                 card.setParent(None)
                 card.deleteLater()
@@ -433,12 +446,51 @@ class Dashboard(QWidget):
         self.side_title.setText(f"Devices ({count})")
         self.screens_title.setText(f"All Screens ({online_count})")
         self._relayout_cards()
+        self._sync_previews()
+
+    def _sync_previews(self):
+        """Attach a low-rate control session per online card for live thumbnails."""
+        if not self._credentials:
+            return
+        relay, key = self._credentials
+        wanted = {
+            did for did, d in self._devices.items()
+            if d.get("online") and did not in self._paused_previews
+        }
+        for did in list(self._previews):
+            if did not in wanted:
+                self._stop_preview(did)
+        for did in wanted:
+            if did in self._previews:
+                continue
+            card = self._cards.get(did)
+            if card is None:
+                continue
+            try:
+                self._previews[did] = PreviewFeed(relay, key, did, card, self)
+            except Exception:
+                pass
+
+    def _stop_preview(self, device_id: str):
+        feed = self._previews.pop(device_id, None)
+        if feed is not None:
+            feed.stop()
+
+    def pause_preview(self, device_id: str):
+        """Release the controller slot so a View tab can take over."""
+        self._paused_previews.add(device_id)
+        self._stop_preview(device_id)
+
+    def resume_preview(self, device_id: str):
+        self._paused_previews.discard(device_id)
+        self._sync_previews()
 
     def _remove_selected(self):
         item = self.list.currentItem()
         if item is None:
             QMessageBox.information(self, "Remove",
-                                    "Select a computer in the list first.")
+                                    "Select a computer in the list first, "
+                                    "or click Remove on a screen card.")
             return
         device = item.data(Qt.UserRole) or {}
         self._remove_device(device)
@@ -451,29 +503,33 @@ class Dashboard(QWidget):
                                 "Connect to the relay first.")
             return
         name = device.get("name", "Device")
+        device_id = device["id"]
         if device.get("online"):
             answer = QMessageBox.question(
-                self, "Remove online PC?",
-                f"{name} is online.\n\n"
-                "Removing it clears it from the list and disconnects any "
-                "control session. If the agent is still running it will "
-                "reappear in a few seconds.\n\nContinue?",
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                self, "Remove PC?",
+                f"Remove {name} from this dashboard?\n\n"
+                "It will stay hidden here even if the agent is still running.\n"
+                "The agent on that PC is not uninstalled.",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if answer != QMessageBox.Yes:
                 return
         else:
             answer = QMessageBox.question(
                 self, "Remove PC?",
-                f"Remove {name} from the list?\n\n"
-                "It will show again only if that agent reconnects.",
+                f"Remove {name} from the list?",
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if answer != QMessageBox.Yes:
                 return
-        # Close any open control tab for this device.
         window = self.window()
         if isinstance(window, MainWindow):
-            window.close_device_session(device["id"])
-        self.console.remove_device(device["id"])
+            window.close_device_session(device_id)
+        self.pause_preview(device_id)
+        # Persist hide so the UI stays in sync if the agent reconnects.
+        self._hidden = store.hide_device(device_id)
+        self.console.remove_device(device_id)
+        # Optimistic local update (don't wait for relay round-trip).
+        remaining = [d for d in self._devices.values() if d["id"] != device_id]
+        self._update_devices(remaining)
 
     def _relayout_cards(self):
         # Detach from both layouts, then re-add in current mode.
@@ -505,6 +561,7 @@ class Dashboard(QWidget):
             self._relayout_cards()
 
     def _on_preview(self, device_id: str, jpeg):
+        # Optional PREVIEW messages from an updated relay (extra path).
         if not isinstance(jpeg, (bytes, bytearray, memoryview)):
             return
         card = self._cards.get(device_id)
@@ -537,7 +594,13 @@ class Dashboard(QWidget):
             QMessageBox.warning(self, "Not connected",
                                 "Connect to the relay first.")
             return
+        # Free the controller slot held by the dashboard thumbnail feed.
+        self.pause_preview(device["id"])
         self.on_connect(*self._credentials, device)
+
+    def shutdown_previews(self):
+        for did in list(self._previews):
+            self._stop_preview(did)
 
 
 class MainWindow(QMainWindow):
@@ -560,6 +623,7 @@ class MainWindow(QMainWindow):
             if isinstance(w, RemoteSession) and w.device["id"] == device["id"]:
                 self.tabs.setCurrentIndex(i)
                 return
+        self.dashboard.pause_preview(device["id"])
         session = RemoteSession(relay, key, device)
         idx = self.tabs.addTab(session, device["name"])
         self.tabs.setCurrentIndex(idx)
@@ -568,10 +632,14 @@ class MainWindow(QMainWindow):
         if index == 0:
             return
         w = self.tabs.widget(index)
+        device_id = None
         if isinstance(w, RemoteSession):
+            device_id = w.device.get("id")
             w.shutdown()
         self.tabs.removeTab(index)
         w.deleteLater()
+        if device_id:
+            self.dashboard.resume_preview(device_id)
 
     def close_device_session(self, device_id: str):
         for i in range(self.tabs.count() - 1, 0, -1):
@@ -582,6 +650,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, e):
         if self.dashboard.console:
             self.dashboard.console.stop()
+        self.dashboard.shutdown_previews()
         for i in range(self.tabs.count()):
             w = self.tabs.widget(i)
             if isinstance(w, RemoteSession):

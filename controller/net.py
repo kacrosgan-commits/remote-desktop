@@ -4,7 +4,7 @@ import base64
 import threading
 
 import websockets
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 
 import protocol as P
 from protocol.connection import run_pair
@@ -204,3 +204,39 @@ class Net(_Client):
                 self.loop.call_soon_threadsafe(enqueue)
             except RuntimeError:
                 pass
+
+
+class PreviewFeed:
+    """Pull live JPEG frames for one dashboard card via a control session.
+
+    Uses the existing controller role so thumbnails work even when the relay
+    does not forward PREVIEW messages. Holds the single controller slot for
+    that device until View is opened (pause) or the device goes offline.
+    """
+
+    def __init__(self, url: str, network_key: str, device_id: str, card, parent: QObject):
+        self.device_id = device_id
+        self.card = card
+        self.signals = Signals(parent)
+        self.net = Net(url, network_key, device_id, self.signals)
+        self.signals.frame.connect(self._on_frame, Qt.ConnectionType.QueuedConnection)
+        self.signals.peer.connect(self._on_peer, Qt.ConnectionType.QueuedConnection)
+        self.net.start()
+
+    def _on_frame(self, data: bytes):
+        if self.card is not None:
+            self.card.set_preview(data)
+
+    def _on_peer(self, joined: bool):
+        if joined:
+            # Low-rate thumbnail stream for the grid.
+            self.net.send_json(P.config(fps=2, quality=40))
+
+    def stop(self):
+        self.card = None
+        try:
+            self.signals.frame.disconnect()
+            self.signals.peer.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        self.net.stop()
