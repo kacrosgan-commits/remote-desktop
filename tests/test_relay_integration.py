@@ -1,16 +1,11 @@
 import asyncio
-import socket
-import threading
-import time
 from types import SimpleNamespace
 
 import pytest
-import uvicorn
 import websockets
 
 import protocol as P
 from controller.net import ConsoleNet, Net
-from relay.server import app, networks
 
 
 class Recorder:
@@ -19,28 +14,6 @@ class Recorder:
 
     def emit(self, *value):
         self.values.append(value[0] if len(value) == 1 else value)
-
-
-@pytest.fixture
-def relay_url():
-    networks.clear()
-    listener = socket.socket()
-    listener.bind(("127.0.0.1", 0))
-    port = listener.getsockname()[1]
-    server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
-    worker = threading.Thread(target=server.run, kwargs={"sockets": [listener]}, daemon=True)
-    worker.start()
-    deadline = time.monotonic() + 5
-    while not server.started and time.monotonic() < deadline:
-        time.sleep(0.01)
-    assert server.started, "local relay failed to start"
-    try:
-        yield f"ws://127.0.0.1:{port}/ws"
-    finally:
-        server.should_exit = True
-        worker.join(timeout=5)
-        listener.close()
-        assert not worker.is_alive()
 
 
 async def eventually(predicate):

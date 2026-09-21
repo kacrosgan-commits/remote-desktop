@@ -17,6 +17,7 @@ DEVICE_LIST = "DEVICE_LIST"  # relay -> console: [{id, name, online}]
 PREVIEW = "PREVIEW"        # agent -> relay -> console: {device_id, jpeg} (base64)
 REMOVE_DEVICE = "REMOVE_DEVICE"  # console -> relay: drop a device from the registry
 REQUEST_DEVICES = "REQUEST_DEVICES"  # console -> relay: ask for a fresh DEVICE_LIST
+ALERT = "ALERT"              # agent -> relay -> console: wallet/app opened on a PC
 PEER_JOINED = "PEER_JOINED"  # relay -> agent/controller
 PEER_LEFT = "PEER_LEFT"      # relay -> agent/controller
 ERROR = "ERROR"            # relay -> client {message}
@@ -108,6 +109,18 @@ def remove_device(device_id: str) -> dict:
 
 def request_devices() -> dict:
     return {"type": REQUEST_DEVICES}
+
+
+def alert(app: str, detail: str = "", device_id: str = "", device_name: str = "") -> dict:
+    """Agent -> relay -> console: a watched app (e.g. wallet) appeared on a PC."""
+    return {
+        "type": ALERT,
+        "kind": "watch_app",
+        "device_id": device_id,
+        "device_name": device_name,
+        "app": app,
+        "detail": detail,
+    }
 
 
 KEY_NAMES = {

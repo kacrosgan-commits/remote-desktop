@@ -15,6 +15,7 @@ class ConsoleSignals(QObject):
     # object (not bytes): safer across queued cross-thread deliveries in PySide.
     preview = Signal(str, object)  # device_id, jpeg bytes
     status = Signal(str)
+    alert = Signal(dict)  # watched app opened on an agent PC
 
 
 class Signals(QObject):
@@ -141,6 +142,8 @@ class ConsoleNet(_Client):
                             device_id, base64.b64decode(jpeg_b64))
                     except Exception:
                         pass
+            elif kind == P.ALERT:
+                self.signals.alert.emit(msg)
             elif kind == P.ERROR:
                 raise RuntimeError(msg.get("message", "relay error"))
 

@@ -84,6 +84,15 @@ async def broadcast_preview(net: Network, text: str):
             net.consoles.discard(c)
 
 
+async def broadcast_alert(net: Network, text: str):
+    """Push ALERT to every console (controller dashboard)."""
+    for c in list(net.consoles):
+        try:
+            await c.send_text(text)
+        except Exception:
+            net.consoles.discard(c)
+
+
 async def _preview_from_jpeg(net: Network, device_id: str, jpeg: bytes):
     import base64
     await broadcast_preview(net, P.dumps(P.preview(
@@ -172,6 +181,17 @@ async def _handle_agent(ws: WebSocket, net: Network, auth: dict):
                     # Ensure device_id matches the registered agent.
                     msg["device_id"] = device_id
                     await broadcast_preview(net, P.dumps(msg))
+                elif isinstance(msg, dict) and msg.get("type") == P.ALERT:
+                    msg["device_id"] = device_id
+                    msg["device_name"] = name
+                    payload = P.dumps(msg)
+                    await broadcast_alert(net, payload)
+                    c = dev.controller
+                    if c is not None:
+                        try:
+                            await c.send_text(payload)
+                        except Exception:
+                            pass
                 else:
                     c = dev.controller
                     if c is not None:

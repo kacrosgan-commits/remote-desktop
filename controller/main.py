@@ -10,12 +10,12 @@ import sys
 import os
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QBrush, QImage, QPainter
+from PySide6.QtGui import QColor, QBrush, QImage, QPainter, QIcon, QPixmap, QAction
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QPushButton, QListWidget, QListWidgetItem, QTabWidget,
     QTabBar, QMessageBox, QScrollArea, QFrame, QSizePolicy, QStackedWidget,
-    QToolButton, QSplitter,
+    QToolButton, QSplitter, QSystemTrayIcon, QMenu,
 )
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -387,6 +387,7 @@ class Dashboard(QWidget):
                 self.signals.devices.disconnect()
                 self.signals.preview.disconnect()
                 self.signals.status.disconnect()
+                self.signals.alert.disconnect()
             except (RuntimeError, TypeError):
                 pass
         self._credentials = (relay, key)
@@ -400,8 +401,15 @@ class Dashboard(QWidget):
             self._on_preview, Qt.ConnectionType.QueuedConnection)
         self.signals.status.connect(
             self.status.setText, Qt.ConnectionType.QueuedConnection)
+        self.signals.alert.connect(
+            self._on_alert, Qt.ConnectionType.QueuedConnection)
         self.console = ConsoleNet(relay, key, self.signals)
         self.console.start()
+
+    def _on_alert(self, alert: dict):
+        win = self.window()
+        if isinstance(win, MainWindow):
+            win.notify_watch_alert(alert)
 
     def _update_devices(self, devices: list):
         # Drop locally-hidden devices so Remove stays in sync even if the agent
@@ -633,6 +641,77 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.dashboard, "Devices")
         self.tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
 
+        self.statusBar().showMessage("Ready")
+        self._setup_tray()
+
+    def _setup_tray(self):
+        self.tray = None
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            return
+        icon = _tray_icon()
+        self.tray = QSystemTrayIcon(icon, self)
+        self.tray.setToolTip("RemoteDesk Controller")
+        menu = QMenu()
+        show_act = QAction("Show RemoteDesk", self)
+        show_act.triggered.connect(self._raise_window)
+        quit_act = QAction("Quit", self)
+        quit_act.triggered.connect(QApplication.instance().quit)
+        menu.addAction(show_act)
+        menu.addSeparator()
+        menu.addAction(quit_act)
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self._tray_activated)
+        self.tray.show()
+
+    def _tray_activated(self, reason):
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
+            self._raise_window()
+
+    def _raise_window(self):
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def notify_watch_alert(self, alert: dict):
+        """Popup + tray balloon when an agent PC opens a watched wallet/crypto app."""
+        device = alert.get("device_name") or alert.get("device_id") or "Unknown PC"
+        app_name = alert.get("app") or "Watched app"
+        detail = (alert.get("detail") or "").strip()
+        title = f"{app_name} opened"
+        body = f"On {device}"
+        if detail:
+            body = f"{body}\n{detail}"
+        self.statusBar().showMessage(f"{title} — {device}", 20000)
+        QApplication.alert(self, 0)
+        if self.tray is not None:
+            self.tray.showMessage(
+                title, body, QSystemTrayIcon.Warning, 12000)
+        # Non-modal dialog so the dashboard stays usable while alerting.
+        dlg = QMessageBox(self)
+        dlg.setIcon(QMessageBox.Warning)
+        dlg.setWindowTitle(title)
+        dlg.setText(f"<b>{app_name}</b> was opened on <b>{device}</b>.")
+        if detail:
+            dlg.setInformativeText(detail)
+        dlg.setStandardButtons(QMessageBox.Ok)
+        # Open View shortcut if we know the device id.
+        device_id = alert.get("device_id")
+        view_btn = None
+        if device_id:
+            view_btn = dlg.addButton("Open View", QMessageBox.AcceptRole)
+        dlg.setModal(False)
+        dlg.setAttribute(Qt.WA_DeleteOnClose, True)
+
+        def _on_finished(_result):
+            if view_btn is not None and dlg.clickedButton() is view_btn:
+                device = self.dashboard._devices.get(device_id)
+                if device:
+                    self.dashboard._open_device(device)
+
+        dlg.finished.connect(_on_finished)
+        dlg.show()
+        self._raise_window()
+
     def _open_session(self, relay, key, device):
         for i in range(self.tabs.count()):
             w = self.tabs.widget(i)
@@ -671,11 +750,28 @@ class MainWindow(QMainWindow):
             w = self.tabs.widget(i)
             if isinstance(w, RemoteSession):
                 w.shutdown()
+        if self.tray is not None:
+            self.tray.hide()
         super().closeEvent(e)
+
+
+def _tray_icon() -> QIcon:
+    pm = QPixmap(64, 64)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.setBrush(QColor("#2563eb"))
+    p.setPen(Qt.NoPen)
+    p.drawRoundedRect(4, 4, 56, 56, 12, 12)
+    p.setPen(QColor("#ffffff"))
+    p.drawText(pm.rect(), Qt.AlignCenter, "RD")
+    p.end()
+    return QIcon(pm)
 
 
 def main():
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(True)
     win = MainWindow()
     win.resize(1280, 820)
     win.show()
