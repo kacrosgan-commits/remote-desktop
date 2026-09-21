@@ -124,10 +124,20 @@ def test_console_can_remove_offline_device(relay_url):
         try:
             async with websockets.connect(relay_url) as agent:
                 await agent.send(P.dumps(P.auth_agent("test-network", "device", "Test PC")))
-                await eventually(lambda: console_signals.devices.values and
-                                 console_signals.devices.values[-1][0]["online"])
-            await eventually(lambda: console_signals.devices.values[-1] and
-                             not console_signals.devices.values[-1][0]["online"])
+                await eventually(lambda: any(
+                    devices and devices[-1].get("online")
+                    for devices in console_signals.devices.values
+                    for devices in [devices] if devices and isinstance(devices, list)
+                ) or any(
+                    d.get("id") == "device" and d.get("online")
+                    for batch in console_signals.devices.values
+                    for d in (batch or [])
+                ))
+            await eventually(lambda: any(
+                d.get("id") == "device" and not d.get("online")
+                for batch in console_signals.devices.values
+                for d in (batch or [])
+            ))
             console.remove_device("device")
             await eventually(lambda: console_signals.devices.values[-1] == [])
         finally:

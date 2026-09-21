@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 RUN_NAME = "RemoteDeskAgent"
@@ -131,11 +132,11 @@ def unregister_startup():
 
 
 def stop_installed_agent(target: Path):
-    """Stop a previously installed agent so its exe can be overwritten on update.
+    """Stop only the *installed* agent — never kill this installer by image name.
 
-    The agent is often a background process (easy to miss in Task Manager's
-    Apps list). The logon task may also relaunch it after a kill, so disable
-    the task for the duration of the update.
+    Earlier builds used `taskkill /IM agent.exe`, which also killed the
+    installer process in Downloads/Documents (same filename) and aborted the
+    update. Match by full path under the install folder, and skip our PID.
     """
     if sys.platform != "win32":
         return
@@ -147,24 +148,26 @@ def stop_installed_agent(target: Path):
         ["schtasks", "/End", "/TN", TASK_NAME],
         check=False, capture_output=True, text=True,
     )
-    # Broad kill by image name first (covers path/casing mismatches).
-    subprocess.run(
-        ["taskkill", "/F", "/IM", "agent.exe", "/T"],
-        check=False, capture_output=True, text=True,
-    )
     target_path = str(target.resolve())
-    # Case-insensitive path match; also any agent under %LOCALAPPDATA%\RemoteDesk.
+    folder = str(target.resolve().parent)
+    my_pid = os.getpid()
     script = (
         "$ErrorActionPreference = 'SilentlyContinue'; "
         f"$target = [System.IO.Path]::GetFullPath({target_path!r}); "
-        "$folder = Split-Path -Parent $target; "
-        "Get-Process | Where-Object { "
-        "  $_.Path -and ("
-        "    ([string]::Compare($_.Path, $target, $true) -eq 0) -or "
-        "    ($_.Path -like ($folder + '\\*') -and $_.ProcessName -eq 'agent')"
-        "  )"
-        "} | Stop-Process -Force; "
-        "Start-Sleep -Milliseconds 1200"
+        f"$folder = [System.IO.Path]::GetFullPath({folder!r}); "
+        f"$me = {my_pid}; "
+        "Get-CimInstance Win32_Process -Filter \"Name='agent.exe'\" | ForEach-Object { "
+        "  if ($_.ProcessId -eq $me) { return }; "
+        "  $path = $_.ExecutablePath; "
+        "  if (-not $path) { return }; "
+        "  $full = [System.IO.Path]::GetFullPath($path); "
+        "  if (([string]::Compare($full, $target, $true) -eq 0) -or "
+        "      $full.StartsWith($folder + [IO.Path]::DirectorySeparatorChar, "
+        "                       [StringComparison]::OrdinalIgnoreCase)) { "
+        "    Stop-Process -Id $_.ProcessId -Force "
+        "  } "
+        "}; "
+        "Start-Sleep -Milliseconds 800"
     )
     subprocess.run(
         ["powershell", "-NoProfile", "-Command", script],
@@ -172,77 +175,94 @@ def stop_installed_agent(target: Path):
     )
 
 
-def _replace_executable(source: Path, target: Path):
-    """Copy source onto target, even if Windows still has the old file open.
+def _write_finish_script(destination: Path, target: Path) -> Path:
+    """Batch file that swaps agent.exe.new into place after the installer exits."""
+    script = destination / "finish-install.cmd"
+    # Only touch the installed binary path — never taskkill by image name alone.
+    content = textwrap.dedent(f"""\
+        @echo off
+        setlocal
+        cd /d "%~dp0"
+        schtasks /Change /TN "{TASK_NAME}" /DISABLE >nul 2>&1
+        schtasks /End /TN "{TASK_NAME}" >nul 2>&1
+        powershell -NoProfile -Command ^
+          "$ErrorActionPreference='SilentlyContinue';" ^
+          "$t=[IO.Path]::GetFullPath('%cd%\\agent.exe');" ^
+          "Get-CimInstance Win32_Process -Filter \\"Name='agent.exe'\\" | ForEach-Object {{" ^
+          "  $p=$_.ExecutablePath; if(-not $p){{return}};" ^
+          "  if([string]::Compare([IO.Path]::GetFullPath($p),$t,$true) -eq 0)" ^
+          "  {{ Stop-Process -Id $_.ProcessId -Force }}" ^
+          "}}"
+        timeout /t 2 /nobreak >nul
+        if exist "agent.exe.old" del /f /q "agent.exe.old" >nul 2>&1
+        if exist "agent.exe" ren "agent.exe" "agent.exe.old" >nul 2>&1
+        if exist "agent.exe" del /f /q "agent.exe" >nul 2>&1
+        if exist "agent.exe.new" (
+          move /y "agent.exe.new" "agent.exe" >nul
+        )
+        if exist "agent.exe.old" del /f /q "agent.exe.old" >nul 2>&1
+        schtasks /Change /TN "{TASK_NAME}" /ENABLE >nul 2>&1
+        if exist "agent.exe" (
+          start "" "agent.exe" --run
+        )
+        del "%~f0" >nul 2>&1
+        """)
+    script.write_text(content, encoding="utf-8")
+    return script
 
-    Strategy:
-      1) stop processes / disable restart task
-      2) direct copy
-      3) if locked: rename old exe -> agent.exe.old (usually allowed while
-         running on Windows), then copy the new binary into place
+
+def _replace_executable(source: Path, target: Path) -> bool:
+    """Place the new binary. Returns True if agent.exe is ready; False if a
+    finish-install.cmd must complete the swap after this process exits.
+
+    Always stages to agent.exe.new first so a locked agent.exe cannot block
+    writing the update payload.
     """
-    stale = target.with_name(target.name + ".old")
-    last_error = None
-    for attempt in range(6):
-        stop_installed_agent(target)
-        # Drop leftovers from a previous interrupted update.
+    destination = target.parent
+    staging = destination / "agent.exe.new"
+    shutil.copy2(source, staging)
+
+    stop_installed_agent(target)
+
+    # Fast path: overwrite in place when the file is not locked.
+    for _ in range(3):
         try:
-            if stale.exists():
-                stale.unlink()
-        except OSError:
-            pass
-        try:
-            shutil.copy2(source, target)
-            return
-        except PermissionError as exc:
-            last_error = exc
-        # Rename-away the locked binary, then write the new one beside it.
-        try:
-            if target.exists():
-                if stale.exists():
-                    try:
-                        stale.unlink()
-                    except OSError:
-                        stale = target.with_name(f"{target.name}.{attempt}.old")
-                target.rename(stale)
-            shutil.copy2(source, target)
-            # Best-effort cleanup; the old process may still hold .old open.
+            shutil.copy2(staging, target)
             try:
-                if stale.exists():
-                    stale.unlink()
+                staging.unlink()
             except OSError:
                 pass
-            return
-        except OSError as exc:
-            last_error = exc
-    raise RuntimeError(
-        "Could not update the installed RemoteDesk agent.\n\n"
-        "Windows still has the old file locked (background agent, scheduled "
-        "task, or antivirus).\n\n"
-        "Fix:\n"
-        "1. Open Task Manager → Details tab → end every \"agent.exe\".\n"
-        "2. Or run:  %LOCALAPPDATA%\\RemoteDesk\\uninstall-agent.bat\n"
-        "3. Then double-click the new agent.exe again.\n\n"
-        "If it still fails, temporarily pause Windows Defender real-time "
-        "protection and retry."
-    ) from last_error
+            return True
+        except PermissionError:
+            time.sleep(0.6)
+            stop_installed_agent(target)
+
+    # Slow path: installer exits, then finish-install.cmd swaps the file.
+    _write_finish_script(destination, target)
+    return False
 
 
-def install(source: Path, arguments: list[str]) -> Path:
+def install(source: Path, arguments: list[str]) -> tuple[Path, bool]:
+    """Install files and startup entries.
+
+    Returns (target_exe, ready). When ready is False, the caller must launch
+    finish-install.cmd instead of starting agent.exe directly.
+    """
     destination = install_dir()
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / "agent.exe"
+    ready = True
     if source.resolve() != target.resolve():
-        _replace_executable(source, target)
+        ready = _replace_executable(source, target)
     (destination / "arguments.json").write_text(
         json.dumps(arguments), encoding="utf-8")
     resources = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
     uninstaller = resources / "uninstall-agent.bat"
     if uninstaller.exists() and uninstaller.resolve() != (destination / uninstaller.name).resolve():
         shutil.copy2(uninstaller, destination / uninstaller.name)
-    # Re-enable / recreate startup (task was disabled during the update).
+    # Recreate startup (task may have been disabled during the update).
     register_startup(target)
-    return target
+    return target, ready
 
 
 def saved_arguments(directory: Path) -> list[str]:
@@ -282,29 +302,47 @@ def prepare(arguments: list[str], validate) -> list[str] | None:
     source = Path(sys.executable)
     if options.run:
         # Clean leftovers from an in-place update while the old process was alive.
-        try:
-            stale = source.with_name(source.name + ".old")
-            if stale.exists():
-                stale.unlink()
-        except OSError:
-            pass
+        for name in (source.name + ".old", source.name + ".new", "finish-install.cmd"):
+            try:
+                stale = source.parent / name
+                if stale.exists() and stale.suffix in {".old", ".new"}:
+                    stale.unlink()
+            except OSError:
+                pass
         return saved_arguments(source.parent) + runtime
     if not options.install and source.resolve() == (install_dir() / "agent.exe").resolve():
         return saved_arguments(source.parent) + runtime
     runtime = saved_arguments(install_dir()) + runtime
     # Never persist a typo that would break every subsequent startup.
     validate(runtime)
-    target = install(source, runtime)
+    target, ready = install(source, runtime)
     environment = os.environ.copy()
     # The installed child outlives this one-file PyInstaller launcher's temp dir.
     environment["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
-    subprocess.Popen([str(target), "--run"], cwd=target.parent, env=environment)
-    notify(
-        "RemoteDesk Agent is installed and starting.\n\n"
-        "It will start automatically when this Windows user signs in after a restart,\n"
-        "and will restart itself if it stops unexpectedly.\n"
-        f"Installed in: {target.parent}\n\n"
-        "To remove it, run uninstall-agent.bat in that folder.")
+    if ready:
+        subprocess.Popen([str(target), "--run"], cwd=target.parent, env=environment)
+        notify(
+            "RemoteDesk Agent is installed and starting.\n\n"
+            "It will start automatically when this Windows user signs in after a restart,\n"
+            "and will restart itself if it stops unexpectedly.\n"
+            f"Installed in: {target.parent}\n\n"
+            "To remove it, run uninstall-agent.bat in that folder.")
+    else:
+        finish = target.parent / "finish-install.cmd"
+        # Detached so this installer can exit before the swap touches agent.exe.
+        subprocess.Popen(
+            ["cmd.exe", "/c", str(finish)],
+            cwd=target.parent,
+            env=environment,
+            creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            | getattr(subprocess, "DETACHED_PROCESS", 0),
+            close_fds=True,
+        )
+        notify(
+            "RemoteDesk Agent is updating.\n\n"
+            "The previous agent was still in use, so Windows will finish the\n"
+            "update in a couple of seconds and then start the new agent.\n\n"
+            f"Installed in: {target.parent}")
     return None
 
 

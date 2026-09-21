@@ -8,7 +8,15 @@ if not exist "%~dp0agent.exe" (
 REM Installs for the signed-in Windows user. No administrator rights needed.
 "%~dp0agent.exe" --install
 if errorlevel 1 (
-  echo Installation failed. See the error dialog or %%USERPROFILE%%\.remotedesk\agent.log.
+  echo Installation failed.
+  echo.
+  echo Check the error dialog, or open:
+  echo   %USERPROFILE%\.remotedesk\agent.log
+  echo.
+  echo If an old agent is stuck, run:
+  echo   %LOCALAPPDATA%\RemoteDesk\uninstall-agent.bat
+  echo then try again.
   pause
   exit /b 1
 )
+echo Installation started. If a confirmation dialog appeared, the agent is installing.

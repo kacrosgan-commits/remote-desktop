@@ -30,7 +30,9 @@ def test_install_copies_binary_and_preserves_options(tmp_path, monkeypatch):
     register = Mock()
     monkeypatch.setattr(startup, "register_startup", register)
     monkeypatch.setattr(startup, "install_dir", lambda: destination)
-    target = startup.install(source, ["--name", "Office PC"])
+    monkeypatch.setattr(startup, "stop_installed_agent", Mock())
+    target, ready = startup.install(source, ["--name", "Office PC"])
+    assert ready is True
     assert target.read_bytes() == b"test executable"
     assert json.loads((destination / "arguments.json").read_text()) == ["--name", "Office PC"]
     register.assert_called_once_with(target)
@@ -54,11 +56,13 @@ def test_running_installed_copy_does_not_copy_onto_itself(tmp_path, monkeypatch)
     source.write_bytes(b"executable")
     monkeypatch.setattr(startup, "register_startup", Mock())
     monkeypatch.setattr(startup, "install_dir", lambda: tmp_path)
-    assert startup.install(source, []) == source
+    target, ready = startup.install(source, [])
+    assert target == source
+    assert ready is True
     assert source.read_bytes() == b"executable"
 
 
-def test_install_stops_running_agent_before_copy(tmp_path, monkeypatch):
+def test_install_retries_then_succeeds_when_target_unlocks(tmp_path, monkeypatch):
     from agent import startup
 
     source = tmp_path / "download" / "agent.exe"
@@ -69,26 +73,35 @@ def test_install_stops_running_agent_before_copy(tmp_path, monkeypatch):
     target = destination / "agent.exe"
     target.write_bytes(b"old")
     stop = Mock()
-    copies = {"n": 0}
+    copies_to_target = {"n": 0}
+
+    real_copy = startup.shutil.copy2
 
     def flaky_copy(src, dst):
-        if Path(dst).name != "agent.exe":
-            return
-        copies["n"] += 1
-        if copies["n"] == 1:
-            raise PermissionError("locked")
-        Path(dst).write_bytes(Path(src).read_bytes())
+        dst = Path(dst)
+        # Staging copy always works.
+        if dst.name == "agent.exe.new":
+            return real_copy(src, dst)
+        if dst.name == "agent.exe":
+            copies_to_target["n"] += 1
+            if copies_to_target["n"] == 1:
+                raise PermissionError("locked")
+            return real_copy(src, dst)
+        return real_copy(src, dst)
 
     monkeypatch.setattr(startup, "install_dir", lambda: destination)
     monkeypatch.setattr(startup, "register_startup", Mock())
     monkeypatch.setattr(startup, "stop_installed_agent", stop)
     monkeypatch.setattr(startup.shutil, "copy2", flaky_copy)
-    assert startup.install(source, []).read_bytes() == b"new"
+    monkeypatch.setattr(startup.time, "sleep", Mock())
+    target, ready = startup.install(source, [])
+    assert ready is True
+    assert target.read_bytes() == b"new"
     assert stop.called
-    assert copies["n"] == 2
+    assert copies_to_target["n"] == 2
 
 
-def test_install_renames_locked_binary_then_replaces(tmp_path, monkeypatch):
+def test_install_defers_swap_when_target_stays_locked(tmp_path, monkeypatch):
     from agent import startup
 
     source = tmp_path / "download" / "agent.exe"
@@ -99,18 +112,43 @@ def test_install_renames_locked_binary_then_replaces(tmp_path, monkeypatch):
     target = destination / "agent.exe"
     target.write_bytes(b"old-bytes")
 
-    def always_locked_onto_agent(src, dst):
-        if Path(dst).resolve() == target.resolve() and target.exists():
+    real_copy = startup.shutil.copy2
+
+    def locked_target(src, dst):
+        dst = Path(dst)
+        if dst.resolve() == target.resolve():
             raise PermissionError("cannot overwrite running image")
-        Path(dst).write_bytes(Path(src).read_bytes())
+        return real_copy(src, dst)
 
     monkeypatch.setattr(startup, "install_dir", lambda: destination)
     monkeypatch.setattr(startup, "register_startup", Mock())
     monkeypatch.setattr(startup, "stop_installed_agent", Mock())
-    monkeypatch.setattr(startup.shutil, "copy2", always_locked_onto_agent)
-    installed = startup.install(source, [])
-    assert installed.read_bytes() == b"new-bytes"
-    assert not (destination / "agent.exe.old").exists()
+    monkeypatch.setattr(startup.shutil, "copy2", locked_target)
+    monkeypatch.setattr(startup.time, "sleep", Mock())
+    installed, ready = startup.install(source, [])
+    assert ready is False
+    assert installed == target
+    assert (destination / "agent.exe.new").read_bytes() == b"new-bytes"
+    assert (destination / "finish-install.cmd").exists()
+
+
+def test_stop_installed_agent_never_uses_image_name_taskkill(monkeypatch):
+    from agent import startup
+
+    calls = []
+
+    def capture(cmd, **kwargs):
+        calls.append(cmd)
+        return Mock(returncode=0)
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(startup.subprocess, "run", capture)
+    startup.stop_installed_agent(Path("C:/Users/Test/AppData/Local/RemoteDesk/agent.exe"))
+    assert any("powershell" in c for c in calls)
+    assert not any(
+        isinstance(c, (list, tuple)) and "taskkill" in c and "/IM" in c
+        for c in calls
+    )
 
 
 def test_startup_command_quotes_windows_paths_with_spaces(monkeypatch):
@@ -124,4 +162,3 @@ def test_startup_command_quotes_windows_paths_with_spaces(monkeypatch):
     startup.register_startup(Path("C:/Users/Test User/RemoteDesk/agent.exe"))
     assert registry.SetValueEx.call_args.args[-1] == '"C:/Users/Test User/RemoteDesk/agent.exe" --run'
     startup._register_logon_task.assert_called_once()
-
