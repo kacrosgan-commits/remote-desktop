@@ -102,3 +102,35 @@ def test_hidden_devices_filtered_from_device_list(app, monkeypatch):
     assert list(dashboard._cards) == ["ok"]
     dashboard.shutdown_previews()
     dashboard.close()
+
+
+def test_mark_device_offline_keeps_card_and_does_not_quit(app, monkeypatch):
+    """Agent uninstall/disconnect must flip Offline without closing the controller."""
+    monkeypatch.setattr(main.store, "load", lambda: ("ws://localhost:8000/ws", "key"))
+    monkeypatch.setattr(main.store, "load_hidden", lambda: set())
+    monkeypatch.setattr(main.store, "save", Mock())
+    monkeypatch.setattr(main, "PreviewFeed", Mock())
+    monkeypatch.setattr(main, "ConsoleNet", Mock())
+    dashboard = main.Dashboard(Mock())
+    dashboard._update_devices([{"id": "pc", "name": "Office", "online": True}])
+    assert dashboard._cards["pc"].status.text() == "● Online"
+    dashboard._mark_device_offline("pc")
+    assert dashboard._devices["pc"]["online"] is False
+    assert dashboard._cards["pc"].status.text() == "○ Offline"
+    assert dashboard.screens_title.text() == "All Screens (0)"
+    assert "pc" in dashboard._cards  # still listed — not removed / not quit
+    dashboard.shutdown_previews()
+    dashboard.close()
+
+
+def test_main_window_branded_remote_dragon(app, monkeypatch):
+    monkeypatch.setattr(main.store, "load", lambda: ("", ""))
+    monkeypatch.setattr(main.store, "load_hidden", lambda: set())
+    monkeypatch.setattr(main.store, "save", Mock())
+    monkeypatch.setattr(main, "PreviewFeed", Mock())
+    monkeypatch.setattr(main, "ConsoleNet", Mock())
+    monkeypatch.setattr(main.QSystemTrayIcon, "isSystemTrayAvailable",
+                        staticmethod(lambda: False))
+    win = main.MainWindow()
+    assert "Remote Dragon" in win.windowTitle()
+    win.close()

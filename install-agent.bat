@@ -11,12 +11,12 @@ if errorlevel 1 (
   echo Installation failed.
   echo.
   echo Check the error dialog, or open:
-  echo   %USERPROFILE%\.remotedesk\agent.log
+  echo   %USERPROFILE%\.remote-dragon\agent.log
   echo.
   echo If an old agent is stuck, run:
-  echo   %LOCALAPPDATA%\RemoteDesk\uninstall-agent.bat
+  echo   %LOCALAPPDATA%\RemoteDragon\uninstall-agent.bat
   echo then try again.
   pause
   exit /b 1
 )
-echo RemoteDesk Agent installed and starting in the background.
+echo Remote Dragon Agent installed and starting in the background.

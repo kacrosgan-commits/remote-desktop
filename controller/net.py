@@ -9,6 +9,9 @@ from PySide6.QtCore import QObject, Qt, Signal
 import protocol as P
 from protocol.connection import run_pair
 
+# Detect dead peers quickly so online/offline status stays in sync.
+_WS_KWARGS = dict(max_size=None, close_timeout=2, ping_interval=20, ping_timeout=20)
+
 
 class ConsoleSignals(QObject):
     devices = Signal(list)
@@ -25,9 +28,10 @@ class Signals(QObject):
 
 
 class _Client(threading.Thread):
-    def __init__(self, url, network_key, signals):
+    def __init__(self, url, network_key, signals, *, auto_reconnect: bool = True):
         super().__init__(daemon=True)
         self.url, self.network_key, self.signals = url, network_key, signals
+        self.auto_reconnect = auto_reconnect
         self.loop = None
         self._attempt = None
         self._stopping = threading.Event()
@@ -47,7 +51,8 @@ class _Client(threading.Thread):
             self._attempt = asyncio.create_task(self._session())
             try:
                 await self._attempt
-                self.signals.status.emit("disconnected — reconnecting…")
+                if self.auto_reconnect and not self._stopping.is_set():
+                    self.signals.status.emit("disconnected — reconnecting…")
             except asyncio.CancelledError:
                 # A refresh cancels the current connection or backoff.
                 backoff = 1
@@ -56,7 +61,7 @@ class _Client(threading.Thread):
                 self.signals.status.emit(f"disconnected: {exc}")
             finally:
                 self._disconnected()
-            if self._stopping.is_set():
+            if self._stopping.is_set() or not self.auto_reconnect:
                 break
             self._attempt = asyncio.create_task(asyncio.sleep(backoff))
             try:
@@ -89,15 +94,15 @@ class ConsoleNet(_Client):
     """Dashboard client: live device list + previews; can remove devices."""
 
     # How often to ask the relay for a fresh list (backup if a push was missed).
-    SYNC_INTERVAL_SEC = 3.0
+    SYNC_INTERVAL_SEC = 2.0
 
     def __init__(self, url, network_key, signals):
-        super().__init__(url, network_key, signals)
+        super().__init__(url, network_key, signals, auto_reconnect=True)
         self.outq = None
         self._connected = False
 
     async def _session(self):
-        async with websockets.connect(self.url, max_size=None, close_timeout=2) as ws:
+        async with websockets.connect(self.url, **_WS_KWARGS) as ws:
             self.outq = asyncio.Queue()
             self._connected = True
             await ws.send(P.dumps(P.auth_console(self.network_key)))
@@ -114,7 +119,7 @@ class ConsoleNet(_Client):
                 await asyncio.gather(sender, poller, return_exceptions=True)
 
     async def _poll_devices(self):
-        """Actively re-sync so newly installed agents appear without clicking Connect."""
+        """Actively re-sync so online/offline and new agents stay current."""
         while True:
             await asyncio.sleep(self.SYNC_INTERVAL_SEC)
             queue = self.outq
@@ -132,7 +137,7 @@ class ConsoleNet(_Client):
             kind = msg.get("type")
             if kind == P.DEVICE_LIST:
                 self.signals.devices.emit(msg.get("devices", []))
-                self.signals.status.emit("online")
+                self.signals.status.emit("connected — syncing devices")
             elif kind == P.PREVIEW:
                 device_id = msg.get("device_id")
                 jpeg_b64 = msg.get("jpeg")
@@ -182,8 +187,9 @@ class ConsoleNet(_Client):
 
 
 class Net(_Client):
-    def __init__(self, url: str, network_key: str, device_id: str, signals: Signals):
-        super().__init__(url, network_key, signals)
+    def __init__(self, url: str, network_key: str, device_id: str, signals: Signals,
+                 *, auto_reconnect: bool = True):
+        super().__init__(url, network_key, signals, auto_reconnect=auto_reconnect)
         self.device_id = device_id
         self.outq = None
         self._connected = False
@@ -191,7 +197,7 @@ class Net(_Client):
         self._frame_emit_pending = False
 
     async def _session(self):
-        async with websockets.connect(self.url, max_size=None, close_timeout=2) as ws:
+        async with websockets.connect(self.url, **_WS_KWARGS) as ws:
             self.outq = asyncio.Queue()
             self._latest_frame = None
             self._frame_emit_pending = False
@@ -230,12 +236,25 @@ class Net(_Client):
                 self.signals.peer.emit(True)
                 self.signals.status.emit("connected")
             elif kind == P.PEER_LEFT:
+                # Agent went offline (e.g. uninstalled). Keep the controller UI
+                # open — only this session ends; MainWindow must not quit.
                 self._connected = False
                 self.signals.peer.emit(False)
                 self.signals.status.emit("device offline")
                 return
+            elif kind == P.ALERT:
+                # Ignored on View sessions; dashboard console handles popups.
+                continue
             elif kind == P.ERROR:
-                raise RuntimeError(msg.get("message", "relay error"))
+                text = str(msg.get("message", "relay error"))
+                # Soft-fail while the PC is offline so reconnect loops stay quiet
+                # and never tear down the whole controller process.
+                if "offline" in text.lower() or "unknown" in text.lower():
+                    self._connected = False
+                    self.signals.peer.emit(False)
+                    self.signals.status.emit("device offline")
+                    return
+                raise RuntimeError(text)
 
     async def _send(self, ws):
         while True:
@@ -264,13 +283,18 @@ class PreviewFeed:
     Uses the existing controller role so thumbnails work even when the relay
     does not forward PREVIEW messages. Holds the single controller slot for
     that device until View is opened (pause) or the device goes offline.
+
+    Does not auto-reconnect: when the agent drops, the feed stops and the
+    dashboard recreates it only after DEVICE_LIST shows the PC online again.
     """
 
-    def __init__(self, url: str, network_key: str, device_id: str, card, parent: QObject):
+    def __init__(self, url: str, network_key: str, device_id: str, card, parent: QObject,
+                 on_offline=None):
         self.device_id = device_id
         self.card = card
+        self._on_offline = on_offline
         self.signals = Signals(parent)
-        self.net = Net(url, network_key, device_id, self.signals)
+        self.net = Net(url, network_key, device_id, self.signals, auto_reconnect=False)
         self.signals.frame.connect(self._on_frame, Qt.ConnectionType.QueuedConnection)
         self.signals.peer.connect(self._on_peer, Qt.ConnectionType.QueuedConnection)
         self.net.start()
@@ -283,9 +307,13 @@ class PreviewFeed:
         if joined:
             # Small, frequent thumbnails — scale is critical for VPS latency.
             self.net.send_json(P.config(fps=4, quality=35, scale=0.3))
+        elif self._on_offline is not None:
+            # Optimistic UI update before the next DEVICE_LIST poll arrives.
+            self._on_offline(self.device_id)
 
     def stop(self):
         self.card = None
+        self._on_offline = None
         try:
             self.signals.frame.disconnect()
             self.signals.peer.disconnect()

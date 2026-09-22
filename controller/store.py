@@ -1,12 +1,29 @@
 """Persistence for the controller: relay URL, network key, and hidden devices."""
 import json
+import shutil
 from pathlib import Path
 
-CONFIG_DIR = Path.home() / ".remotedesk"
+import branding
+
+CONFIG_DIR = Path.home() / branding.CONFIG_DIRNAME
+LEGACY_CONFIG_DIR = Path.home() / branding.LEGACY_CONFIG_DIRNAME
 CONFIG_FILE = CONFIG_DIR / "controller.json"
 
 
+def _migrate_legacy_config():
+    """Copy settings from the old RemoteDesk folder once."""
+    legacy = LEGACY_CONFIG_DIR / "controller.json"
+    if CONFIG_FILE.exists() or not legacy.exists():
+        return
+    try:
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(legacy, CONFIG_FILE)
+    except OSError:
+        pass
+
+
 def load() -> tuple[str, str]:
+    _migrate_legacy_config()
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -16,6 +33,7 @@ def load() -> tuple[str, str]:
 
 
 def load_hidden() -> set[str]:
+    _migrate_legacy_config()
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)

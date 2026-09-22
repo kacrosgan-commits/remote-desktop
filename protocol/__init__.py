@@ -1,4 +1,4 @@
-"""Shared wire protocol for the remote-desktop app.
+"""Shared wire protocol for Remote Dragon.
 
 Auto-discovery model:
   * Every agent and the controller share one NETWORK KEY.

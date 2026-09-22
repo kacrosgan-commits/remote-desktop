@@ -1,4 +1,4 @@
-# RemoteDesk
+# Remote Dragon
 
 Control a Windows computer (`agent.exe`) from another computer
 (`controller.exe`) through your own WebSocket relay. Both applications
@@ -9,7 +9,9 @@ connect outbound, so agent computers do not need port forwarding.
 - **Dashboard screen grid:** the Devices tab shows a live thumbnail of every
   online computer. Click **View** (or double-click the list) to open a full
   control session. Online/offline status updates automatically as agents
-  connect or disconnect. Use **Remove selected** to clear a PC from the list.
+  connect, disconnect, or uninstall. Use **Remove selected** to clear a PC
+  from the list. Uninstalling an agent never closes `controller.exe` — the
+  PC simply flips to Offline.
 - **Automatic installation and startup:** launch the newly built agent once.
   It installs for the current Windows user and starts at that user's next
   sign-in, including after a restart. Updating stops the old agent
@@ -31,7 +33,7 @@ removal, limitations and Windows acceptance checks.
 Install Python 3.10 or newer and double-click `build.bat`. Enter your relay
 URL and network key, or press Enter to retain the current settings. The build
 installs dependencies and produces `dist/agent.exe`, `dist/controller.exe`
-and `dist/RemoteDesk-windows.zip`. Copy the new agent to the controlled PC
+and `dist/RemoteDragon-windows.zip`. Copy the new agent to the controlled PC
 and the controller to the controlling PC.
 
 **The original executables in `dist` are older builds.** Source changes do
@@ -43,8 +45,8 @@ run on Windows to produce these Windows executables.
 From the repository root:
 
 ```sh
-docker build -f relay/Dockerfile -t remotedesk-relay .
-docker run -d --name relay -p 8000:8000 remotedesk-relay
+docker build -f relay/Dockerfile -t remote-dragon-relay .
+docker run -d --name relay -p 8000:8000 remote-dragon-relay
 ```
 
 Use `relay/Caddyfile` to terminate TLS and connect with `wss://`.

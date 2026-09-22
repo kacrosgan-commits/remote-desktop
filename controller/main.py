@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from controller import store  # noqa: E402
+import branding  # noqa: E402
 import config  # noqa: E402
 from controller.net import ConsoleNet, ConsoleSignals, PreviewFeed  # noqa: E402
 from controller.view import RemoteSession  # noqa: E402
@@ -481,9 +482,30 @@ class Dashboard(QWidget):
             if card is None:
                 continue
             try:
-                self._previews[did] = PreviewFeed(relay, key, did, card, self)
+                self._previews[did] = PreviewFeed(
+                    relay, key, did, card, self,
+                    on_offline=self._mark_device_offline)
             except Exception:
                 pass
+
+    def _mark_device_offline(self, device_id: str):
+        """Flip a card to Offline immediately when its preview session drops.
+
+        The relay DEVICE_LIST push/poll confirms soon after; this avoids a
+        multi-second stale Online state after agent.exe is killed/uninstalled.
+        Never closes the controller window.
+        """
+        current = self._devices.get(device_id)
+        if not current or not current.get("online"):
+            self._stop_preview(device_id)
+            return
+        devices = []
+        for did, d in self._devices.items():
+            if did == device_id:
+                devices.append({**d, "online": False})
+            else:
+                devices.append(d)
+        self._update_devices(devices)
 
     def _stop_preview(self, device_id: str):
         feed = self._previews.pop(device_id, None)
@@ -630,7 +652,7 @@ class Dashboard(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("RemoteDesk — Controller")
+        self.setWindowTitle(f"{branding.DISPLAY_NAME} — Controller")
         self.setStyleSheet(_STYLE)
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
@@ -650,11 +672,12 @@ class MainWindow(QMainWindow):
             return
         icon = _tray_icon()
         self.tray = QSystemTrayIcon(icon, self)
-        self.tray.setToolTip("RemoteDesk Controller")
+        self.tray.setToolTip(f"{branding.DISPLAY_NAME} Controller")
         menu = QMenu()
-        show_act = QAction("Show RemoteDesk", self)
+        show_act = QAction(f"Show {branding.DISPLAY_NAME}", self)
         show_act.triggered.connect(self._raise_window)
         quit_act = QAction("Quit", self)
+        # Explicit Quit only — agent offline/uninstall must never call this.
         quit_act.triggered.connect(QApplication.instance().quit)
         menu.addAction(show_act)
         menu.addSeparator()
@@ -771,6 +794,7 @@ def _tray_icon() -> QIcon:
 
 def main():
     app = QApplication(sys.argv)
+    app.setApplicationName(branding.DISPLAY_NAME)
     app.setQuitOnLastWindowClosed(True)
     win = MainWindow()
     win.resize(1280, 820)

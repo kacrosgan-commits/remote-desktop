@@ -10,14 +10,21 @@ import tempfile
 import textwrap
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import branding  # noqa: E402
+
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
-RUN_NAME = "RemoteDeskAgent"
-TASK_NAME = "RemoteDeskAgent"
+RUN_NAME = branding.RUN_VALUE
+TASK_NAME = branding.TASK_NAME
 _instance_handle = None
 
 
 def install_dir() -> Path:
-    return Path(os.environ["LOCALAPPDATA"]) / "RemoteDesk"
+    return Path(os.environ["LOCALAPPDATA"]) / branding.INSTALL_DIRNAME
+
+
+def legacy_install_dir() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA", "")) / branding.LEGACY_INSTALL_DIRNAME
 
 
 def _startup_command(executable: Path) -> str:
@@ -34,6 +41,10 @@ def register_startup(executable: Path):
     command = _startup_command(executable)
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
         winreg.SetValueEx(key, RUN_NAME, 0, winreg.REG_SZ, command)
+        try:
+            winreg.DeleteValue(key, branding.LEGACY_RUN_VALUE)
+        except OSError:
+            pass
     _register_logon_task(executable)
 
 
@@ -48,13 +59,17 @@ def _register_logon_task(executable: Path):
         return
     # Ensure the Run-key path is still valid even if task creation fails.
     _startup_command(executable)
+    subprocess.run(
+        ["schtasks", "/Delete", "/TN", branding.LEGACY_TASK_NAME, "/F"],
+        check=False, capture_output=True, text=True,
+    )
     exe_xml = _xml_escape(str(executable))
     work_xml = _xml_escape(str(executable.parent))
     xml = textwrap.dedent(f"""\
         <?xml version="1.0" encoding="UTF-16"?>
         <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
           <RegistrationInfo>
-            <Description>RemoteDesk agent — keeps the PC online after sign-in.</Description>
+            <Description>{branding.DISPLAY_NAME} agent — keeps the PC online after sign-in.</Description>
           </RegistrationInfo>
           <Triggers>
             <LogonTrigger>
@@ -122,13 +137,18 @@ def unregister_startup():
     try:
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
-            winreg.DeleteValue(key, RUN_NAME)
+            for name in (RUN_NAME, branding.LEGACY_RUN_VALUE):
+                try:
+                    winreg.DeleteValue(key, name)
+                except OSError:
+                    pass
     except OSError:
         pass
-    subprocess.run(
-        ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"],
-        check=False, capture_output=True, text=True,
-    )
+    for task in (TASK_NAME, branding.LEGACY_TASK_NAME):
+        subprocess.run(
+            ["schtasks", "/Delete", "/TN", task, "/F"],
+            check=False, capture_output=True, text=True,
+        )
 
 
 def stop_installed_agent(target: Path):
@@ -140,14 +160,15 @@ def stop_installed_agent(target: Path):
     """
     if sys.platform != "win32":
         return
-    subprocess.run(
-        ["schtasks", "/Change", "/TN", TASK_NAME, "/DISABLE"],
-        check=False, capture_output=True, text=True,
-    )
-    subprocess.run(
-        ["schtasks", "/End", "/TN", TASK_NAME],
-        check=False, capture_output=True, text=True,
-    )
+    for task in (TASK_NAME, branding.LEGACY_TASK_NAME):
+        subprocess.run(
+            ["schtasks", "/Change", "/TN", task, "/DISABLE"],
+            check=False, capture_output=True, text=True,
+        )
+        subprocess.run(
+            ["schtasks", "/End", "/TN", task],
+            check=False, capture_output=True, text=True,
+        )
     target_path = str(target.resolve())
     folder = str(target.resolve().parent)
     my_pid = os.getpid()
@@ -248,6 +269,10 @@ def install(source: Path, arguments: list[str]) -> tuple[Path, bool]:
     Returns (target_exe, ready). When ready is False, the caller must launch
     finish-install.cmd instead of starting agent.exe directly.
     """
+    # Stop a leftover agent from the previous RemoteDesk install folder.
+    legacy = legacy_install_dir() / "agent.exe"
+    if legacy.exists():
+        stop_installed_agent(legacy)
     destination = install_dir()
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / "agent.exe"
@@ -279,7 +304,8 @@ def notify(message: str, error: bool = False):
     if sys.platform == "win32":
         import ctypes
         ctypes.windll.user32.MessageBoxW(
-            None, message, "RemoteDesk Agent", 0x10 if error else 0x40)
+            None, message, f"{branding.DISPLAY_NAME} Agent",
+            0x10 if error else 0x40)
     elif sys.stderr is not None:
         print(message, file=sys.stderr)
 
@@ -312,7 +338,8 @@ def prepare(arguments: list[str], validate) -> list[str] | None:
         return saved_arguments(source.parent) + runtime
     if not options.install and source.resolve() == (install_dir() / "agent.exe").resolve():
         return saved_arguments(source.parent) + runtime
-    runtime = saved_arguments(install_dir()) + runtime
+    saved = saved_arguments(install_dir()) or saved_arguments(legacy_install_dir())
+    runtime = saved + runtime
     # Never persist a typo that would break every subsequent startup.
     validate(runtime)
     target, ready = install(source, runtime)
@@ -349,7 +376,7 @@ def acquire_instance() -> bool:
     kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR]
     kernel32.CreateMutexW.restype = wintypes.HANDLE
     kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-    handle = kernel32.CreateMutexW(None, False, r"Local\RemoteDeskAgent")
+    handle = kernel32.CreateMutexW(None, False, branding.MUTEX_NAME)
     error = ctypes.get_last_error()
     if not handle:
         raise ctypes.WinError(error)

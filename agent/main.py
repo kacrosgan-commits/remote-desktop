@@ -1,7 +1,7 @@
 """Agent — runs on every machine you want to control.
 
 Runs headless (no console window when built with --noconsole). Status goes
-to a log file at ~/.remotedesk/agent.log instead of the screen.
+to a log file at ~/.remote-dragon/agent.log instead of the screen.
 
 On startup it REGISTERS with the relay using the baked-in network key, so it
 appears in the dashboard automatically, and keeps a stable device id.
@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 import websockets
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import branding  # noqa: E402
 import protocol as P  # noqa: E402
 import config  # noqa: E402
 from agent.capture import ScreenCapturer  # noqa: E402
@@ -31,9 +32,10 @@ from agent import startup  # noqa: E402
 from agent.watch_apps import scan_matches  # noqa: E402
 from protocol.connection import run_pair  # noqa: E402
 
-BASE_DIR = Path.home() / ".remotedesk"
+BASE_DIR = Path.home() / branding.CONFIG_DIRNAME
 DEVICE_FILE = BASE_DIR / "device_id"
 LOG_FILE = BASE_DIR / "agent.log"
+_WS_KWARGS = dict(max_size=None, close_timeout=2, ping_interval=20, ping_timeout=20)
 
 # Dashboard thumbnails: keep bandwidth low even with many agents online.
 PREVIEW_FPS = 2.0
@@ -72,6 +74,16 @@ def get_device_id() -> str:
     try:
         return DEVICE_FILE.read_text(encoding="utf-8").strip()
     except Exception:
+        # Migrate identity from the previous RemoteDesk install if present.
+        legacy = Path.home() / branding.LEGACY_CONFIG_DIRNAME / "device_id"
+        try:
+            did = legacy.read_text(encoding="utf-8").strip()
+            if did:
+                BASE_DIR.mkdir(parents=True, exist_ok=True)
+                DEVICE_FILE.write_text(did, encoding="utf-8")
+                return did
+        except Exception:
+            pass
         did = uuid.uuid4().hex[:12]
         try:
             DEVICE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -113,8 +125,7 @@ class Agent:
         try:
             while True:
                 try:
-                    async with websockets.connect(self.args.relay, max_size=None,
-                                                  close_timeout=2) as ws:
+                    async with websockets.connect(self.args.relay, **_WS_KWARGS) as ws:
                         await ws.send(P.dumps(P.auth_agent(
                             self.args.network_key, self.device_id, self.name)))
                         log.info("online")
@@ -271,7 +282,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
 def parse_args(arguments=None):
     ap = ArgumentParser(description=(
-        "RemoteDesk agent. The Windows exe installs itself on first launch. "
+        f"{branding.DISPLAY_NAME} agent. The Windows exe installs itself on first launch. "
         "Use --portable to run without installing, or --install to register startup again."))
     ap.add_argument("--relay", default=config.RELAY_URL)
     ap.add_argument("--network-key", default=config.NETWORK_KEY, dest="network_key")

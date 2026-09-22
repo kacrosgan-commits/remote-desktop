@@ -39,11 +39,11 @@ def main():
     dist = ROOT / "dist"
     for filename in ("install-agent.bat", "uninstall-agent.bat", "WINDOWS-QUICKSTART.md"):
         shutil.copy2(ROOT / filename, dist / filename)
-    with zipfile.ZipFile(dist / "RemoteDesk-windows.zip", "w", zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(dist / "RemoteDragon-windows.zip", "w", zipfile.ZIP_DEFLATED) as archive:
         for filename in ("agent.exe", "controller.exe", "install-agent.bat",
                          "uninstall-agent.bat", "WINDOWS-QUICKSTART.md"):
             archive.write(dist / filename, filename)
-    print("\nBuilt dist/agent.exe, dist/controller.exe and dist/RemoteDesk-windows.zip")
+    print("\nBuilt dist/agent.exe, dist/controller.exe and dist/RemoteDragon-windows.zip")
 
 
 if __name__ == "__main__":

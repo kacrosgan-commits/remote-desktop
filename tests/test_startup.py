@@ -26,7 +26,7 @@ def test_install_copies_binary_and_preserves_options(tmp_path, monkeypatch):
     source = tmp_path / "download" / "agent.exe"
     source.parent.mkdir()
     source.write_bytes(b"test executable")
-    destination = tmp_path / "Local AppData" / "RemoteDesk"
+    destination = tmp_path / "Local AppData" / "RemoteDragon"
     register = Mock()
     monkeypatch.setattr(startup, "register_startup", register)
     monkeypatch.setattr(startup, "install_dir", lambda: destination)
@@ -68,7 +68,7 @@ def test_install_retries_then_succeeds_when_target_unlocks(tmp_path, monkeypatch
     source = tmp_path / "download" / "agent.exe"
     source.parent.mkdir()
     source.write_bytes(b"new")
-    destination = tmp_path / "Local AppData" / "RemoteDesk"
+    destination = tmp_path / "Local AppData" / "RemoteDragon"
     destination.mkdir(parents=True)
     target = destination / "agent.exe"
     target.write_bytes(b"old")
@@ -107,7 +107,7 @@ def test_install_defers_swap_when_target_stays_locked(tmp_path, monkeypatch):
     source = tmp_path / "download" / "agent.exe"
     source.parent.mkdir()
     source.write_bytes(b"new-bytes")
-    destination = tmp_path / "Local AppData" / "RemoteDesk"
+    destination = tmp_path / "Local AppData" / "RemoteDragon"
     destination.mkdir(parents=True)
     target = destination / "agent.exe"
     target.write_bytes(b"old-bytes")
@@ -143,7 +143,7 @@ def test_stop_installed_agent_never_uses_image_name_taskkill(monkeypatch):
 
     monkeypatch.setattr(sys, "platform", "win32")
     monkeypatch.setattr(startup.subprocess, "run", capture)
-    startup.stop_installed_agent(Path("C:/Users/Test/AppData/Local/RemoteDesk/agent.exe"))
+    startup.stop_installed_agent(Path("C:/Users/Test/AppData/Local/RemoteDragon/agent.exe"))
     assert any("powershell" in c for c in calls)
     assert not any(
         isinstance(c, (list, tuple)) and "taskkill" in c and "/IM" in c
@@ -159,6 +159,6 @@ def test_startup_command_quotes_windows_paths_with_spaces(monkeypatch):
     registry.CreateKey.return_value.__exit__ = Mock(return_value=False)
     monkeypatch.setitem(sys.modules, "winreg", registry)
     monkeypatch.setattr(startup, "_register_logon_task", Mock())
-    startup.register_startup(Path("C:/Users/Test User/RemoteDesk/agent.exe"))
-    assert registry.SetValueEx.call_args.args[-1] == '"C:/Users/Test User/RemoteDesk/agent.exe" --run'
+    startup.register_startup(Path("C:/Users/Test User/RemoteDragon/agent.exe"))
+    assert registry.SetValueEx.call_args.args[-1] == '"C:/Users/Test User/RemoteDragon/agent.exe" --run'
     startup._register_logon_task.assert_called_once()
