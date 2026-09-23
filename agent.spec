@@ -23,6 +23,8 @@ exe = EXE(
     a.datas,
     [],
     name='agent',
+    icon='packaging/desktop-remote-manager.ico',
+    version='packaging/agent-version.txt',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
