@@ -26,7 +26,11 @@ INPUT_MOUSE = "INPUT_MOUSE"   # controller -> agent
 INPUT_KEY = "INPUT_KEY"       # controller -> agent
 LOCK_INPUT = "LOCK_INPUT"     # controller -> agent
 UNLOCK_INPUT = "UNLOCK_INPUT" # controller -> agent
-CONFIG = "CONFIG"          # controller -> agent {fps?, quality?}
+CONFIG = "CONFIG"          # controller -> agent {fps?, quality?, scale?, monitor?}
+CLIPBOARD = "CLIPBOARD"    # controller -> agent: paste text from the controller
+FILE_BEGIN = "FILE_BEGIN"  # controller -> agent: start a file drop
+FILE_CHUNK = "FILE_CHUNK"  # controller -> agent: base64 piece of that file
+FILE_END = "FILE_END"      # controller -> agent: file is complete
 
 # roles
 ROLE_AGENT = "agent"        # a controllable machine announcing itself
@@ -124,6 +128,22 @@ def alert(app: str, detail: str = "", device_id: str = "", device_name: str = ""
         "app": app,
         "detail": detail,
     }
+
+
+def clipboard(text: str) -> dict:
+    return {"type": CLIPBOARD, "text": text}
+
+
+def file_begin(transfer_id: str, name: str, size: int) -> dict:
+    return {"type": FILE_BEGIN, "id": transfer_id, "name": name, "size": int(size)}
+
+
+def file_chunk(transfer_id: str, data_b64: str) -> dict:
+    return {"type": FILE_CHUNK, "id": transfer_id, "data": data_b64}
+
+
+def file_end(transfer_id: str) -> dict:
+    return {"type": FILE_END, "id": transfer_id}
 
 
 KEY_NAMES = {

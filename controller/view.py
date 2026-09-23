@@ -6,12 +6,15 @@ RemoteSession— one tab: control strip + RemoteView + its own Net client,
 """
 import sys
 import os
+import base64
+import uuid
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QRectF, QEvent, Signal
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QImage, QPainter, QGuiApplication
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QCheckBox, QPushButton,
-    QComboBox,
+    QComboBox, QFileDialog,
 )
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,6 +41,7 @@ _QT_BUTTONS = {
 
 class RemoteView(QWidget):
     release_requested = Signal()
+    paste_requested = Signal()
 
     def __init__(self, net: Net):
         super().__init__()
@@ -172,6 +176,14 @@ class RemoteView(QWidget):
             self.set_control_enabled(False)
             self.release_requested.emit()
             return
+        if e.key() == Qt.Key_V and e.modifiers() & Qt.ControlModifier and not e.isAutoRepeat():
+            # Paste the controller clipboard instead of typing a remote Ctrl+V.
+            if Qt.Key_Control in self._pressed_keys:
+                self.net.send_json(P.key(P.K_UP, "ctrl"))
+                self._pressed_keys.pop(Qt.Key_Control, None)
+            self.paste_requested.emit()
+            e.accept()
+            return
         name = self._pressed_keys.get(e.key()) or self._key_name(e)
         if name:
             self._pressed_keys[e.key()] = name
@@ -248,6 +260,15 @@ class RemoteSession(QWidget):
         self.display.currentIndexChanged.connect(self._send_stream_config)
         controls.addWidget(self.display)
 
+        self.paste_btn = QPushButton("Paste")
+        self.paste_btn.setToolTip("Paste text or files copied on this computer (Ctrl+V).")
+        self.paste_btn.clicked.connect(self._paste_from_controller)
+        controls.addWidget(self.paste_btn)
+        self.send_file_btn = QPushButton("Send file")
+        self.send_file_btn.setToolTip("Copy a file onto the remote desktop.")
+        self.send_file_btn.clicked.connect(self._pick_file)
+        controls.addWidget(self.send_file_btn)
+
         controls.addStretch(1)
         self.status = QLabel("connecting…")
         controls.addWidget(self.status)
@@ -256,10 +277,11 @@ class RemoteSession(QWidget):
         layout.setContentsMargins(6, 6, 6, 6)
         layout.addLayout(controls)
         layout.addWidget(QLabel(
-            "Click the remote screen to type. Ctrl+Shift+Esc releases control. "
-            "Lower Scale % if the picture feels delayed."))
+            "Click the remote screen to type. Ctrl+V pastes text or files from this computer. "
+            "Ctrl+Shift+Esc releases control."))
         layout.addWidget(self.view, 1)
 
+        self.view.paste_requested.connect(self._paste_from_controller)
         self.signals.frame.connect(self.view.set_frame, Qt.ConnectionType.QueuedConnection)
         self.signals.status.connect(self.status.setText, Qt.ConnectionType.QueuedConnection)
         self.signals.peer.connect(self._on_peer, Qt.ConnectionType.QueuedConnection)
@@ -298,6 +320,49 @@ class RemoteSession(QWidget):
             self.block.setChecked(False)
         if joined:
             self.net.send_json(self._stream_config())
+
+    def _paste_from_controller(self):
+        clipboard = QGuiApplication.clipboard()
+        mime = clipboard.mimeData()
+        if mime is not None and mime.hasUrls():
+            files = [
+                url.toLocalFile() for url in mime.urls()
+                if url.isLocalFile() and os.path.isfile(url.toLocalFile())
+            ]
+            if files:
+                for path in files:
+                    self._send_file(path)
+                return
+        text = clipboard.text()
+        if text:
+            self.net.send_json(P.clipboard(text[:200_000]))
+            self.status.setText("pasted clipboard text")
+            return
+        self.status.setText("clipboard is empty")
+
+    def _pick_file(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Send file to remote PC")
+        if path:
+            self._send_file(path)
+
+    def _send_file(self, path: str):
+        file_path = Path(path)
+        try:
+            data = file_path.read_bytes()
+        except OSError as exc:
+            self.status.setText(f"cannot read file: {exc}")
+            return
+        if len(data) > 32 * 1024 * 1024:
+            self.status.setText("file is larger than 32 MB")
+            return
+        transfer_id = uuid.uuid4().hex[:12]
+        self.net.send_json(P.file_begin(transfer_id, file_path.name, len(data)))
+        step = 192 * 1024
+        for offset in range(0, len(data), step):
+            piece = base64.b64encode(data[offset:offset + step]).decode("ascii")
+            self.net.send_json(P.file_chunk(transfer_id, piece))
+        self.net.send_json(P.file_end(transfer_id))
+        self.status.setText(f"sent {file_path.name} to the remote desktop")
 
     def shutdown(self):
         self.view.set_control_enabled(False)

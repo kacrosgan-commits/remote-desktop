@@ -28,6 +28,7 @@ import config  # noqa: E402
 from agent.capture import ScreenCapturer  # noqa: E402
 from agent.input_inject import InputInjector  # noqa: E402
 from agent.input_block import make_input_blocker  # noqa: E402
+from agent.clipboard_io import FileInbox, paste_file, paste_text  # noqa: E402
 from agent import startup  # noqa: E402
 from agent.watch_apps import scan_matches  # noqa: E402
 from protocol.connection import run_pair  # noqa: E402
@@ -124,6 +125,7 @@ class Agent:
         self._latest_session_jpeg: bytes | None = None
         self._latest_preview_jpeg: bytes | None = None
         self._frame_ready = asyncio.Event()
+        self._files = FileInbox()
 
     async def run(self):
         log.info(f"device '{self.name}' id={self.device_id} relay={self.args.relay}")
@@ -273,6 +275,34 @@ class Agent:
                 self.injector.handle_mouse(msg)
             elif t == P.INPUT_KEY:
                 self.injector.handle_key(msg)
+            elif t == P.CLIPBOARD:
+                text = msg.get("text")
+                if isinstance(text, str) and text:
+                    ok = paste_text(self.injector, text)
+                    log.info("pasted clipboard text" if ok else "clipboard text was not applied")
+            elif t == P.FILE_BEGIN:
+                try:
+                    size = int(msg.get("size"))
+                except (TypeError, ValueError):
+                    size = -1
+                err = self._files.begin(
+                    str(msg.get("id") or ""),
+                    str(msg.get("name") or ""),
+                    size,
+                )
+                if err:
+                    log.warning(f"file drop rejected: {err}")
+            elif t == P.FILE_CHUNK:
+                err = self._files.chunk(str(msg.get("id") or ""), str(msg.get("data") or ""))
+                if err:
+                    log.warning(f"file chunk rejected: {err}")
+            elif t == P.FILE_END:
+                result = self._files.finish(str(msg.get("id") or ""))
+                if isinstance(result, Path):
+                    paste_file(self.injector, result)
+                    log.info(f"file dropped at {result}")
+                else:
+                    log.warning(f"file drop failed: {result}")
             elif t == P.LOCK_INPUT:
                 self.blocker.block()
                 log.info("local input BLOCKED")
