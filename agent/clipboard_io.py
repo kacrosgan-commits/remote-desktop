@@ -64,19 +64,24 @@ def set_clipboard_files(paths: list[Path]) -> bool:
 
 
 def paste_text(injector, text: str) -> bool:
-    if text is None:
+    try:
+        if not text:
+            return False
+        if not set_clipboard_text(str(text)):
+            return False
+        _chord_paste(injector)
+        return True
+    except Exception:
         return False
-    if not set_clipboard_text(str(text)):
-        return False
-    _chord_paste(injector)
-    return True
 
 
 def paste_file(injector, path: Path) -> bool:
-    if set_clipboard_files([path]):
-        _chord_paste(injector)
+    try:
+        if set_clipboard_files([path]):
+            _chord_paste(injector)
         return True
-    return False
+    except Exception:
+        return False
 
 
 def _chord_paste(injector):
@@ -158,26 +163,68 @@ def _xclip_set(payload: str, target: str) -> bool:
         return False
 
 
+def _win_clipboard():
+    """64-bit-safe clipboard APIs.
+
+    The default ctypes return type is a 32-bit int. On 64-bit Windows that
+    truncates HGLOBAL pointers, and the next write hits a tiny address such
+    as 0x20 (access violation) and kills the agent session.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    user32.OpenClipboard.argtypes = [wintypes.HWND]
+    user32.OpenClipboard.restype = wintypes.BOOL
+    user32.EmptyClipboard.argtypes = []
+    user32.EmptyClipboard.restype = wintypes.BOOL
+    user32.SetClipboardData.argtypes = [wintypes.UINT, wintypes.HANDLE]
+    user32.SetClipboardData.restype = wintypes.HANDLE
+    user32.CloseClipboard.argtypes = []
+    user32.CloseClipboard.restype = wintypes.BOOL
+    kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
+    kernel32.GlobalAlloc.restype = wintypes.HGLOBAL
+    kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+    kernel32.GlobalLock.restype = ctypes.c_void_p
+    kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+    kernel32.GlobalUnlock.restype = wintypes.BOOL
+    kernel32.GlobalFree.argtypes = [wintypes.HGLOBAL]
+    kernel32.GlobalFree.restype = wintypes.HGLOBAL
+    return user32, kernel32
+
+
 def _win_set_text(text: str) -> bool:
     import ctypes
-    user32 = ctypes.windll.user32
-    kernel32 = ctypes.windll.kernel32
+    user32, kernel32 = _win_clipboard()
     CF_UNICODETEXT = 13
     GMEM_MOVEABLE = 0x0002
     data = text.encode("utf-16-le") + b"\x00\x00"
     if not user32.OpenClipboard(None):
         return False
+    handle = None
     try:
         user32.EmptyClipboard()
         handle = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(data))
         if not handle:
             return False
         ptr = kernel32.GlobalLock(handle)
+        if not ptr:
+            kernel32.GlobalFree(handle)
+            handle = None
+            return False
         ctypes.memmove(ptr, data, len(data))
         kernel32.GlobalUnlock(handle)
         if not user32.SetClipboardData(CF_UNICODETEXT, handle):
+            kernel32.GlobalFree(handle)
+            handle = None
             return False
+        handle = None  # system owns it after a successful SetClipboardData
         return True
+    except Exception:
+        if handle:
+            kernel32.GlobalFree(handle)
+        return False
     finally:
         user32.CloseClipboard()
 
@@ -185,8 +232,7 @@ def _win_set_text(text: str) -> bool:
 def _win_set_files(paths: list[Path]) -> bool:
     import ctypes
     import struct
-    user32 = ctypes.windll.user32
-    kernel32 = ctypes.windll.kernel32
+    user32, kernel32 = _win_clipboard()
     CF_HDROP = 15
     GMEM_MOVEABLE = 0x0002
     wide = ("\0".join(str(p) for p in paths) + "\0\0").encode("utf-16-le")
@@ -194,16 +240,28 @@ def _win_set_files(paths: list[Path]) -> bool:
     blob = header + wide
     if not user32.OpenClipboard(None):
         return False
+    handle = None
     try:
         user32.EmptyClipboard()
         handle = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(blob))
         if not handle:
             return False
         ptr = kernel32.GlobalLock(handle)
+        if not ptr:
+            kernel32.GlobalFree(handle)
+            handle = None
+            return False
         ctypes.memmove(ptr, blob, len(blob))
         kernel32.GlobalUnlock(handle)
         if not user32.SetClipboardData(CF_HDROP, handle):
+            kernel32.GlobalFree(handle)
+            handle = None
             return False
+        handle = None
         return True
+    except Exception:
+        if handle:
+            kernel32.GlobalFree(handle)
+        return False
     finally:
         user32.CloseClipboard()

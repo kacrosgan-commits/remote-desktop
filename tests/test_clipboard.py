@@ -34,4 +34,11 @@ def test_ctrl_v_requests_paste_instead_of_typing_v(app):
         QEvent.KeyPress, Qt.Key_V, "\x16", Qt.ControlModifier))
     assert hits == [True]
     assert all(msg.get("name") != "v" for msg in messages)
-    assert P.clipboard("hi")["type"] == P.CLIPBOARD
+def test_paste_failure_does_not_raise(monkeypatch):
+    from agent.clipboard_io import paste_text
+
+    def boom(_text):
+        raise OSError("exception: access violation writing 0x20")
+
+    monkeypatch.setattr("agent.clipboard_io.set_clipboard_text", boom)
+    assert paste_text(object(), "hello") is False

@@ -150,7 +150,9 @@ class Agent:
                         )
                 except Exception as e:
                     log.warning(f"disconnected: {e!r}; retrying in {backoff}s")
-                    if not self._reported_connect_error:
+                    # Only blame the relay when sign-in itself failed. A later
+                    # session error (for example clipboard) must not show this.
+                    if not self._peer_present and not self._reported_connect_error:
                         self._reported_connect_error = True
                         startup.notify(
                             "This PC is not visible in the controller.\n\n"
@@ -276,10 +278,13 @@ class Agent:
             elif t == P.INPUT_KEY:
                 self.injector.handle_key(msg)
             elif t == P.CLIPBOARD:
-                text = msg.get("text")
-                if isinstance(text, str) and text:
-                    ok = paste_text(self.injector, text)
-                    log.info("pasted clipboard text" if ok else "clipboard text was not applied")
+                try:
+                    text = msg.get("text")
+                    if isinstance(text, str) and text:
+                        ok = paste_text(self.injector, text)
+                        log.info("pasted clipboard text" if ok else "clipboard text was not applied")
+                except Exception as e:
+                    log.warning(f"clipboard paste failed: {e!r}")
             elif t == P.FILE_BEGIN:
                 try:
                     size = int(msg.get("size"))
@@ -297,12 +302,15 @@ class Agent:
                 if err:
                     log.warning(f"file chunk rejected: {err}")
             elif t == P.FILE_END:
-                result = self._files.finish(str(msg.get("id") or ""))
-                if isinstance(result, Path):
-                    paste_file(self.injector, result)
-                    log.info(f"file dropped at {result}")
-                else:
-                    log.warning(f"file drop failed: {result}")
+                try:
+                    result = self._files.finish(str(msg.get("id") or ""))
+                    if isinstance(result, Path):
+                        paste_file(self.injector, result)
+                        log.info(f"file dropped at {result}")
+                    else:
+                        log.warning(f"file drop failed: {result}")
+                except Exception as e:
+                    log.warning(f"file drop failed: {e!r}")
             elif t == P.LOCK_INPUT:
                 self.blocker.block()
                 log.info("local input BLOCKED")
