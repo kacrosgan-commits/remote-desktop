@@ -75,6 +75,13 @@ def test_input_coordinates_stay_within_last_screen_pixel():
     assert injector._to_pixels(-0.5, 2) == (-1920, 1079)
 
 
+def test_input_coordinates_follow_display_geometry():
+    injector = InputInjector(0, 0, 1920, 1080)
+    injector.set_geometry(1920, 0, 1080, 1080)
+    assert injector._to_pixels(0.0, 0.0) == (1920, 0)
+    assert injector._to_pixels(1.0, 1.0) == (1920 + 1079, 1079)
+
+
 def test_agent_releases_pressed_inputs_when_session_ends():
     injector = InputInjector(0, 0, 1920, 1080)
     injector.keyboard = Mock()

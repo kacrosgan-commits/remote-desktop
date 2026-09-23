@@ -33,7 +33,7 @@ removal, limitations and Windows acceptance checks.
 Install Python 3.10 or newer and double-click `build.bat`. Enter your relay
 URL and network key, or press Enter to retain the current settings. The build
 installs dependencies and produces `dist/agent.exe`, `dist/controller.exe`
-and `dist/RemoteDragon-windows.zip`. Copy the new agent to the controlled PC
+and `dist/RemoteDesk-windows.zip`. Copy the new agent to the controlled PC
 and the controller to the controlling PC.
 
 **The original executables in `dist` are older builds.** Source changes do

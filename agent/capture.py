@@ -5,11 +5,12 @@ import cv2
 
 
 class ScreenCapturer:
-    def __init__(self, monitor_index: int = 1):
-        # mss monitors: index 0 = all monitors combined, 1 = primary, ...
+    def __init__(self, monitor_index: int = 0):
+        # mss monitors: index 0 = all displays as one desktop, 1 = primary, 2 = second, ...
         self._sct = mss.mss()
-        self.monitor_index = monitor_index
-        self.monitor = self._sct.monitors[monitor_index]
+        self.monitor_index = 0
+        self.monitor = self._sct.monitors[0]
+        self.set_monitor(monitor_index)
 
     @property
     def width(self) -> int:
@@ -26,6 +27,16 @@ class ScreenCapturer:
     @property
     def top(self) -> int:
         return self.monitor["top"]
+
+    def set_monitor(self, monitor_index: int):
+        """Switch which display is captured. 0 = every display in one image."""
+        monitors = self._sct.monitors
+        if not monitors:
+            return
+        if monitor_index < 0 or monitor_index >= len(monitors):
+            monitor_index = 0
+        self.monitor_index = monitor_index
+        self.monitor = monitors[monitor_index]
 
     def grab_jpeg(self, quality: int = 60, scale: float = 1.0) -> bytes:
         raw = self._sct.grab(self.monitor)          # BGRA

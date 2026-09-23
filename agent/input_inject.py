@@ -32,10 +32,17 @@ class InputInjector:
         self.keyboard = KeyboardController()
         self.left = screen_left
         self.top = screen_top
-        self.w = screen_width
-        self.h = screen_height
+        self.w = max(1, screen_width)
+        self.h = max(1, screen_height)
         self._pressed_keys = {}
         self._pressed_buttons = set()
+
+    def set_geometry(self, left: int, top: int, width: int, height: int):
+        """Retarget clicks when the captured display changes (e.g. monitor 2)."""
+        self.left = left
+        self.top = top
+        self.w = max(1, width)
+        self.h = max(1, height)
 
     def _to_pixels(self, x: float, y: float) -> tuple[int, int]:
         px = self.left + max(0, min(self.w - 1, int(round(x * (self.w - 1)))))

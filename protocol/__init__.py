@@ -87,7 +87,7 @@ def key(action: str, name: str) -> dict:
 
 
 def config(fps: int | None = None, quality: int | None = None,
-           scale: float | None = None) -> dict:
+           scale: float | None = None, monitor: int | None = None) -> dict:
     m = {"type": CONFIG}
     if fps is not None:
         m["fps"] = fps
@@ -95,6 +95,9 @@ def config(fps: int | None = None, quality: int | None = None,
         m["quality"] = quality
     if scale is not None:
         m["scale"] = scale
+    # 0 = all displays, 1 = primary, 2 = second display, ...
+    if monitor is not None:
+        m["monitor"] = int(monitor)
     return m
 
 

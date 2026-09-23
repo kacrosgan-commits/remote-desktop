@@ -10,7 +10,8 @@ import os
 from PySide6.QtCore import Qt, QRectF, QEvent, Signal
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QCheckBox, QPushButton
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QCheckBox, QPushButton,
+    QComboBox,
 )
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -235,6 +236,18 @@ class RemoteSession(QWidget):
         self.scale.valueChanged.connect(self._send_stream_config)
         controls.addWidget(self.scale)
 
+        controls.addWidget(QLabel("Display"))
+        self.display = QComboBox()
+        self.display.addItem("All", 0)
+        self.display.addItem("1", 1)
+        self.display.addItem("2", 2)
+        self.display.addItem("3", 3)
+        self.display.setToolTip(
+            "All shows every monitor in one picture so clicks reach display 2. "
+            "Choose 2 to control only the second screen.")
+        self.display.currentIndexChanged.connect(self._send_stream_config)
+        controls.addWidget(self.display)
+
         controls.addStretch(1)
         self.status = QLabel("connecting…")
         controls.addWidget(self.status)
@@ -257,6 +270,7 @@ class RemoteSession(QWidget):
             fps=self.fps.value(),
             quality=self.quality.value(),
             scale=self.scale.value() / 100.0,
+            monitor=int(self.display.currentData()),
         )
 
     def _send_stream_config(self, *_):

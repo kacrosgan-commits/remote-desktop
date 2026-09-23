@@ -241,6 +241,9 @@ class Dashboard(QWidget):
         self._previews: dict[str, PreviewFeed] = {}
         self._hidden: set[str] = store.load_hidden()
         self._paused_previews: set[str] = set()  # View tab open for these
+        # After the first DEVICE_LIST, notify Online/Offline transitions.
+        self._status_ready = False
+        self._known_online: dict[str, bool] = {}
         self._grid_mode = True
         relay, network_key = store.load()
         if not relay:
@@ -412,11 +415,33 @@ class Dashboard(QWidget):
         if isinstance(win, MainWindow):
             win.notify_watch_alert(alert)
 
+    def _notify_status(self, name: str, device_id: str, online: bool, *, first_seen: bool = False):
+        win = self.window()
+        if isinstance(win, MainWindow):
+            win.notify_device_status(name, device_id, online, first_seen=first_seen)
+
     def _update_devices(self, devices: list):
         # Drop locally-hidden devices so Remove stays in sync even if the agent
         # reconnects (online remove would otherwise make the PC reappear).
         devices = [d for d in devices if d.get("id") not in self._hidden]
         devices = sorted(devices, key=lambda d: (not d["online"], d["name"].lower()))
+
+        # Detect Online ↔ Offline changes for tray notifications (after baseline).
+        transitions: list[tuple[str, str, bool, bool]] = []
+        if self._status_ready:
+            for d in devices:
+                did = d.get("id")
+                if not did:
+                    continue
+                online = bool(d.get("online"))
+                prev = self._known_online.get(did)
+                if prev is None and online:
+                    transitions.append((did, d.get("name") or did, True, True))
+                elif prev is True and not online:
+                    transitions.append((did, d.get("name") or did, False, False))
+                elif prev is False and online:
+                    transitions.append((did, d.get("name") or did, True, False))
+
         seen = set()
         selected_id = None
         current = self.list.currentItem()
@@ -462,6 +487,13 @@ class Dashboard(QWidget):
         self.screens_title.setText(f"All Screens ({online_count})")
         self._relayout_cards()
         self._sync_previews()
+
+        self._known_online = {
+            d["id"]: bool(d["online"]) for d in devices if d.get("id")
+        }
+        self._status_ready = True
+        for did, name, online, first_seen in transitions:
+            self._notify_status(name, did, online, first_seen=first_seen)
 
     def _sync_previews(self):
         """Attach a low-rate control session per online card for live thumbnails."""
@@ -694,6 +726,26 @@ class MainWindow(QMainWindow):
         self.show()
         self.raise_()
         self.activateWindow()
+
+    def notify_device_status(self, name: str, device_id: str, online: bool,
+                             *, first_seen: bool = False):
+        """Tray + status-bar notice when an agent PC goes online or offline.
+
+        Uses the existing DEVICE_LIST sync — no extra relay traffic. Does not
+        quit the controller. First baseline sync is silent (see Dashboard).
+        """
+        if online:
+            title = f"{name} is online" if not first_seen else f"{name} joined"
+            body = "Agent connected — ready to view."
+            icon = QSystemTrayIcon.Information
+        else:
+            title = f"{name} went offline"
+            body = "Agent disconnected or was uninstalled."
+            icon = QSystemTrayIcon.Warning
+        self.statusBar().showMessage(title, 15000)
+        QApplication.alert(self, 0)
+        if self.tray is not None:
+            self.tray.showMessage(title, body, icon, 10000)
 
     def notify_watch_alert(self, alert: dict):
         """Popup + tray balloon when an agent PC opens a watched wallet/crypto app."""

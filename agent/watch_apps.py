@@ -38,6 +38,13 @@ WATCH_PATTERNS: tuple[tuple[str, str], ...] = (
     ("jaxx", "Jaxx wallet"),
     ("cake wallet", "Cake Wallet"),
     ("exodus wallet", "Exodus wallet"),
+    ("stripe", "Stripe"),
+    ("paypal", "PayPal"),
+    ("square", "Square"),
+    ("cash app", "Cash App"),
+    ("venmo", "Venmo"),
+    ("revolut", "Revolut"),
+    ("shopify pos", "Shopify POS"),
 )
 
 

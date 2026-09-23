@@ -306,7 +306,8 @@ class PreviewFeed:
     def _on_peer(self, joined: bool):
         if joined:
             # Small, frequent thumbnails — scale is critical for VPS latency.
-            self.net.send_json(P.config(fps=4, quality=35, scale=0.3))
+            # monitor 0 = every display, so a wallet on screen 2 still shows up.
+            self.net.send_json(P.config(fps=4, quality=35, scale=0.3, monitor=0))
         elif self._on_offline is not None:
             # Optimistic UI update before the next DEVICE_LIST poll arrives.
             self._on_offline(self.device_id)

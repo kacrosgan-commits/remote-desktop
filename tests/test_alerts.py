@@ -25,6 +25,12 @@ def test_match_exodus_process_name():
     assert hit.label == "Exodus wallet"
 
 
+def test_match_stripe_window():
+    hit = _match_text("Stripe Checkout")
+    assert hit is not None
+    assert hit.label == "Stripe"
+
+
 def test_match_ledger_window_title():
     hit = _match_text("Ledger Live")
     assert hit is not None
