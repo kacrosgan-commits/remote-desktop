@@ -40,7 +40,7 @@ def test_capture_is_created_and_used_on_same_worker_thread(agent):
         agent._frame_ready = asyncio.Event()
 
         async def stop_after_grab():
-            while agent.cap.grabber is None:
+            while agent.cap is None or agent.cap.grabber is None:
                 await asyncio.sleep(0.01)
             raise asyncio.CancelledError()
 

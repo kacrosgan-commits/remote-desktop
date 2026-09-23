@@ -35,7 +35,16 @@ from protocol.connection import run_pair  # noqa: E402
 BASE_DIR = Path.home() / branding.CONFIG_DIRNAME
 DEVICE_FILE = BASE_DIR / "device_id"
 LOG_FILE = BASE_DIR / "agent.log"
-_WS_KWARGS = dict(max_size=None, close_timeout=2, ping_interval=20, ping_timeout=20)
+_WS_KWARGS = dict(
+    max_size=None, close_timeout=2, ping_interval=20, ping_timeout=20, open_timeout=15)
+
+
+def open_socket(url: str):
+    """Direct WebSocket. proxy=None avoids a broken Windows system proxy."""
+    try:
+        return websockets.connect(url, proxy=None, **_WS_KWARGS)
+    except TypeError:
+        return websockets.connect(url, **_WS_KWARGS)
 
 # Dashboard thumbnails: keep bandwidth low even with many agents online.
 PREVIEW_FPS = 2.0
@@ -101,19 +110,16 @@ class Agent:
         self.fps = args.fps
         self.quality = args.quality
         self.scale = args.scale
-        # mss owns thread-local OS handles. Creation, capture and close must
-        # all happen on the same worker, including after a relay reconnect.
+        # Screen capture must not block registration. mss can hang on some
+        # Windows desktops; the relay sign-in has to proceed anyway.
         self._capture_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="capture")
-        try:
-            self.cap = self._capture_pool.submit(ScreenCapturer, args.monitor).result()
-        except Exception:
-            self._capture_pool.shutdown()
-            raise
-        self.injector = InputInjector(
-            self.cap.left, self.cap.top, self.cap.width, self.cap.height)
+        self._cap_future = self._capture_pool.submit(ScreenCapturer, args.monitor)
+        self.cap = None
+        self.injector = InputInjector(0, 0, 1, 1)
         self.blocker = make_input_blocker()
         self.blocker.start()
         self._peer_present = False
+        self._reported_connect_error = False
         # Latest-frame slot: overwrite instead of queuing so lag cannot build up.
         self._latest_session_jpeg: bytes | None = None
         self._latest_preview_jpeg: bytes | None = None
@@ -125,10 +131,11 @@ class Agent:
         try:
             while True:
                 try:
-                    async with websockets.connect(self.args.relay, **_WS_KWARGS) as ws:
+                    async with open_socket(self.args.relay) as ws:
                         await ws.send(P.dumps(P.auth_agent(
                             self.args.network_key, self.device_id, self.name)))
                         log.info("online")
+                        self._reported_connect_error = False
                         backoff = 1
                         self._latest_session_jpeg = None
                         self._latest_preview_jpeg = None
@@ -141,6 +148,15 @@ class Agent:
                         )
                 except Exception as e:
                     log.warning(f"disconnected: {e!r}; retrying in {backoff}s")
+                    if not self._reported_connect_error:
+                        self._reported_connect_error = True
+                        startup.notify(
+                            "This PC is not visible in the controller.\n\n"
+                            f"Cannot reach the relay:\n{self.args.relay}\n\n"
+                            f"{e}\n\n"
+                            "Use the same Relay URL and Network Key on the controller. "
+                            "The agent will keep retrying.",
+                            error=True)
                 finally:
                     self._peer_present = False
                     self.injector.release_all()
@@ -154,14 +170,40 @@ class Agent:
         self.injector.release_all()
         self.blocker.stop()
         try:
-            await asyncio.get_running_loop().run_in_executor(self._capture_pool, self.cap.close)
+            if self.cap is None:
+                try:
+                    self.cap = await asyncio.get_running_loop().run_in_executor(
+                        None, lambda: self._cap_future.result(timeout=5))
+                except Exception:
+                    self.cap = None
+            if self.cap is not None:
+                await asyncio.get_running_loop().run_in_executor(
+                    self._capture_pool, self.cap.close)
         finally:
-            self._capture_pool.shutdown(wait=True)
+            self._capture_pool.shutdown(wait=False)
+
+    async def _ensure_capture(self) -> bool:
+        if self.cap is not None:
+            return True
+        try:
+            cap = await asyncio.get_running_loop().run_in_executor(
+                None, self._cap_future.result)
+        except Exception as e:
+            log.error(f"screen capture init failed: {e!r}")
+            self._cap_future = self._capture_pool.submit(
+                ScreenCapturer, self.args.monitor)
+            return False
+        self.cap = cap
+        self.injector.set_geometry(cap.left, cap.top, cap.width, cap.height)
+        return True
 
     async def _capture_loop(self):
         """Capture as fast as configured; always keep only the newest JPEG."""
         next_preview = 0.0
         while True:
+            if not await self._ensure_capture():
+                await asyncio.sleep(2)
+                continue
             now = time.monotonic()
             if not self._peer_present and now >= next_preview:
                 try:
@@ -252,6 +294,8 @@ class Agent:
 
     def _apply_monitor(self, index: int):
         """Must run on the capture worker (mss is thread-local)."""
+        if self.cap is None:
+            return
         self.cap.set_monitor(index)
         self.injector.set_geometry(
             self.cap.left, self.cap.top, self.cap.width, self.cap.height)
@@ -273,11 +317,11 @@ class Agent:
                 if m.key in seen:
                     continue
                 try:
-                    # Push a fresh screenshot so the controller sees the
-                    # payment/wallet window, including when it is on display 2.
-                    jpeg = await asyncio.get_running_loop().run_in_executor(
-                        self._capture_pool, self.cap.grab_jpeg,
-                        PREVIEW_QUALITY, PREVIEW_SCALE)
+                    jpeg = None
+                    if self.cap is not None:
+                        jpeg = await asyncio.get_running_loop().run_in_executor(
+                            self._capture_pool, self.cap.grab_jpeg,
+                            PREVIEW_QUALITY, PREVIEW_SCALE)
                     if not self._peer_present and jpeg:
                         self._latest_preview_jpeg = jpeg
                         self._frame_ready.set()

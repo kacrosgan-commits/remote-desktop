@@ -9,8 +9,15 @@ from PySide6.QtCore import QObject, Qt, Signal
 import protocol as P
 from protocol.connection import run_pair
 
-# Detect dead peers quickly so online/offline status stays in sync.
-_WS_KWARGS = dict(max_size=None, close_timeout=2, ping_interval=20, ping_timeout=20)
+_WS_KWARGS = dict(max_size=None, close_timeout=2, ping_interval=20, ping_timeout=20, open_timeout=15)
+
+
+def open_socket(url: str):
+    """Direct WebSocket. proxy=None avoids a broken Windows system proxy."""
+    try:
+        return websockets.connect(url, proxy=None, **_WS_KWARGS)
+    except TypeError:
+        return websockets.connect(url, **_WS_KWARGS)
 
 
 class ConsoleSignals(QObject):
@@ -102,7 +109,7 @@ class ConsoleNet(_Client):
         self._connected = False
 
     async def _session(self):
-        async with websockets.connect(self.url, **_WS_KWARGS) as ws:
+        async with open_socket(self.url) as ws:
             self.outq = asyncio.Queue()
             self._connected = True
             await ws.send(P.dumps(P.auth_console(self.network_key)))
@@ -137,7 +144,6 @@ class ConsoleNet(_Client):
             kind = msg.get("type")
             if kind == P.DEVICE_LIST:
                 self.signals.devices.emit(msg.get("devices", []))
-                self.signals.status.emit("connected — syncing devices")
             elif kind == P.PREVIEW:
                 device_id = msg.get("device_id")
                 jpeg_b64 = msg.get("jpeg")
@@ -197,7 +203,7 @@ class Net(_Client):
         self._frame_emit_pending = False
 
     async def _session(self):
-        async with websockets.connect(self.url, **_WS_KWARGS) as ws:
+        async with open_socket(self.url) as ws:
             self.outq = asyncio.Queue()
             self._latest_frame = None
             self._frame_emit_pending = False

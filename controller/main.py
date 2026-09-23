@@ -423,8 +423,11 @@ class Dashboard(QWidget):
     def _update_devices(self, devices: list):
         # Drop locally-hidden devices so Remove stays in sync even if the agent
         # reconnects (online remove would otherwise make the PC reappear).
-        devices = [d for d in devices if d.get("id") not in self._hidden]
-        devices = sorted(devices, key=lambda d: (not d["online"], d["name"].lower()))
+        devices = [d for d in devices if d.get("id") and d.get("id") not in self._hidden]
+        devices = sorted(
+            devices,
+            key=lambda d: (not d.get("online"), str(d.get("name") or "").lower()),
+        )
 
         # Detect Online ↔ Offline changes for tray notifications (after baseline).
         transitions: list[tuple[str, str, bool, bool]] = []
@@ -482,9 +485,17 @@ class Dashboard(QWidget):
                 self._devices.pop(device_id, None)
 
         count = len(devices)
-        online_count = sum(1 for d in devices if d["online"])
+        online_count = sum(1 for d in devices if d.get("online"))
         self.side_title.setText(f"Devices ({count})")
         self.screens_title.setText(f"All Screens ({online_count})")
+        if count == 0 and self._hidden:
+            self.status.setText(
+                f"connected — {len(self._hidden)} computer(s) hidden. Click Show removed.")
+        elif count == 0:
+            self.status.setText(
+                "connected — waiting for an agent. It must use this same Relay URL and Network Key.")
+        else:
+            self.status.setText(f"connected — {online_count} online, {count - online_count} offline")
         self._relayout_cards()
         self._sync_previews()
 
