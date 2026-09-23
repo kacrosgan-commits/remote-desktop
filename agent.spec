@@ -28,7 +28,6 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    # UPX often drops the embedded icon while leaving the display name intact.
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
