@@ -34,6 +34,12 @@ def test_payment_inside_browser_or_ldplayer():
     assert browser is not None and browser.label == "Exodus wallet in Chrome"
     player = _match_title("MetaMask - LDPlayer")
     assert player is not None and "LDPlayer" in player.label
+    assert _match_title("Credit card - Google Chrome") is not None
+    jeton = _match_title("Jeton - Google Chrome")
+    assert jeton is not None and jeton.label == "Jeton card in Chrome"
+    from agent.watch_apps import _match_android
+    redot = _match_android("com.redotpay.app")
+    assert redot is not None and redot.label == "RedotPay in LDPlayer"
 
 
 def test_match_stripe_window():
@@ -48,7 +54,17 @@ def test_match_ledger_window_title():
     assert "Ledger" in hit.label
 
 
-def test_match_ignores_unrelated():
+def test_ldplayer_android_package():
+    from agent.watch_apps import (
+        _match_android, packages_from_dumpsys, running_ldplayer_indexes)
+
+    dump = "  mCurrentFocus=Window{abc u0 io.metamask/io.metamask.MainActivity}\n"
+    assert packages_from_dumpsys(dump) == ["io.metamask"]
+    hit = _match_android("io.metamask")
+    assert hit is not None and hit.label == "MetaMask in LDPlayer"
+    assert _match_android("com.android.settings") is None
+    listing = "0,LDPlayer,1,2,1,10,11\n1,LDPlayer-2,3,4,0,12,13\n"
+    assert running_ldplayer_indexes(listing) == ["0"]
     assert _match_text("notepad") is None
     assert _match_text("explorer.exe") is None
 

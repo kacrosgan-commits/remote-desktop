@@ -9,7 +9,7 @@ Run:  python -m controller.main
 import sys
 import os
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QBrush, QImage, QPainter, QIcon, QPixmap, QAction
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
@@ -226,7 +226,30 @@ class DeviceCard(QFrame):
         self.remove_btn.clicked.connect(lambda: self.remove_requested.emit(self.device))
         footer.addWidget(self.remove_btn)
         layout.addLayout(footer)
+        self._pay_on = False
+        self.pay_dot = QLabel("●", self.thumb)
+        self.pay_dot.setStyleSheet(
+            "color: #dc2626; font-size: 22px; font-weight: 800; background: transparent;")
+        self.pay_dot.move(8, 4)
+        self.pay_dot.hide()
+        self._blink = QTimer(self)
+        self._blink.setInterval(450)
+        self._blink.timeout.connect(self._toggle_pay_dot)
         self._apply_status()
+
+    def set_payment(self, active: bool):
+        """Blink a red dot on this screen while a payment app is open."""
+        if active and not self._pay_on:
+            self._pay_on = True
+            self.pay_dot.show()
+            self._blink.start()
+        elif not active and self._pay_on:
+            self._pay_on = False
+            self._blink.stop()
+            self.pay_dot.hide()
+
+    def _toggle_pay_dot(self):
+        self.pay_dot.setVisible(not self.pay_dot.isVisible())
 
     def update_device(self, device: dict):
         self.device = dict(device)
@@ -434,6 +457,13 @@ class Dashboard(QWidget):
                 win.notify_link_problem(text)
 
     def _on_alert(self, alert: dict):
+        device_id = alert.get("device_id")
+        active = bool(alert.get("active", True))
+        card = self._cards.get(device_id) if device_id else None
+        if card is not None:
+            card.set_payment(active)
+        if not active:
+            return
         win = self.window()
         if isinstance(win, MainWindow):
             win.notify_watch_alert(alert)
@@ -739,44 +769,17 @@ class MainWindow(QMainWindow):
                 "Connection problem", text, QSystemTrayIcon.Warning, 10000)
 
     def notify_watch_alert(self, alert: dict):
-        """Popup + tray balloon when an agent PC opens a watched wallet/crypto app."""
+        """Tray notification only. No dialog and no taskbar alarm."""
         device = alert.get("device_name") or alert.get("device_id") or "Unknown PC"
-        app_name = alert.get("app") or "Watched app"
+        app_name = alert.get("app") or "Payment app"
         detail = (alert.get("detail") or "").strip()
-        title = f"{app_name} opened"
+        title = f"{app_name} is running"
         body = f"On {device}"
         if detail:
             body = f"{body}\n{detail}"
         self.statusBar().showMessage(f"{title} — {device}", 20000)
-        QApplication.alert(self, 0)
         if self.tray is not None:
-            self.tray.showMessage(
-                title, body, QSystemTrayIcon.Warning, 12000)
-        # Non-modal dialog so the dashboard stays usable while alerting.
-        dlg = QMessageBox(self)
-        dlg.setIcon(QMessageBox.Warning)
-        dlg.setWindowTitle(title)
-        dlg.setText(f"<b>{app_name}</b> was opened on <b>{device}</b>.")
-        if detail:
-            dlg.setInformativeText(detail)
-        dlg.setStandardButtons(QMessageBox.Ok)
-        # Open View shortcut if we know the device id.
-        device_id = alert.get("device_id")
-        view_btn = None
-        if device_id:
-            view_btn = dlg.addButton("Open View", QMessageBox.AcceptRole)
-        dlg.setModal(False)
-        dlg.setAttribute(Qt.WA_DeleteOnClose, True)
-
-        def _on_finished(_result):
-            if view_btn is not None and dlg.clickedButton() is view_btn:
-                device = self.dashboard._devices.get(device_id)
-                if device:
-                    self.dashboard._open_device(device)
-
-        dlg.finished.connect(_on_finished)
-        dlg.show()
-        self._raise_window()
+            self.tray.showMessage(title, body, QSystemTrayIcon.Information, 8000)
 
     def _open_session(self, relay, key, device):
         for i in range(self.tabs.count()):

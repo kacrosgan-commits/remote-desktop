@@ -343,9 +343,9 @@ class Agent:
             except Exception as e:
                 log.debug(f"watch_apps scan failed: {e!r}")
                 matches = []
-            current = {m.key for m in matches}
-            for m in matches:
-                if m.key in seen:
+            current = {m.key: m for m in matches}
+            for key, match in current.items():
+                if key in seen:
                     continue
                 try:
                     jpeg = None
@@ -357,13 +357,24 @@ class Agent:
                         self._latest_preview_jpeg = jpeg
                         self._frame_ready.set()
                     await ws.send(P.dumps(P.alert(
-                        m.label, m.detail,
-                        device_id=self.device_id, device_name=self.name)))
-                    log.info(f"alert: {m.label} on {self.name} ({m.detail})")
+                        match.label, match.detail,
+                        device_id=self.device_id, device_name=self.name,
+                        active=True)))
+                    log.info(f"payment running: {match.label} on {self.name} ({match.detail})")
                 except Exception as e:
                     log.warning(f"alert send failed: {e!r}")
                     raise
-            seen = current
+            if seen and not current:
+                try:
+                    await ws.send(P.dumps(P.alert(
+                        "", "payment closed",
+                        device_id=self.device_id, device_name=self.name,
+                        active=False)))
+                    log.info("payment closed")
+                except Exception as e:
+                    log.warning(f"alert clear failed: {e!r}")
+                    raise
+            seen = set(current)
             await asyncio.sleep(WATCH_INTERVAL_SEC)
 
 

@@ -118,8 +118,9 @@ def request_devices() -> dict:
     return {"type": REQUEST_DEVICES}
 
 
-def alert(app: str, detail: str = "", device_id: str = "", device_name: str = "") -> dict:
-    """Agent -> relay -> console: a watched app (e.g. wallet) appeared on a PC."""
+def alert(app: str, detail: str = "", device_id: str = "", device_name: str = "",
+          active: bool = True) -> dict:
+    """Agent -> relay -> console: a payment app is open or has closed."""
     return {
         "type": ALERT,
         "kind": "watch_app",
@@ -127,6 +128,7 @@ def alert(app: str, detail: str = "", device_id: str = "", device_name: str = ""
         "device_name": device_name,
         "app": app,
         "detail": detail,
+        "active": active,
     }
 
 
