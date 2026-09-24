@@ -29,6 +29,7 @@ from agent.capture import ScreenCapturer  # noqa: E402
 from agent.input_inject import InputInjector  # noqa: E402
 from agent.input_block import make_input_blocker  # noqa: E402
 from agent.clipboard_io import FileInbox, paste_file, paste_text  # noqa: E402
+from agent.power import allow_display_sleep, release as release_power, stay_awake, wake_display  # noqa: E402
 from agent import startup  # noqa: E402
 from agent.watch_apps import scan_matches  # noqa: E402
 from protocol.connection import run_pair  # noqa: E402
@@ -120,7 +121,7 @@ class Agent:
         self.blocker = make_input_blocker()
         self.blocker.start()
         self._peer_present = False
-        self._reported_connect_error = False
+        stay_awake()
         # Latest-frame slot: overwrite instead of queuing so lag cannot build up.
         self._latest_session_jpeg: bytes | None = None
         self._latest_preview_jpeg: bytes | None = None
@@ -137,7 +138,6 @@ class Agent:
                         await ws.send(P.dumps(P.auth_agent(
                             self.args.network_key, self.device_id, self.name)))
                         log.info("online")
-                        self._reported_connect_error = False
                         backoff = 1
                         self._latest_session_jpeg = None
                         self._latest_preview_jpeg = None
@@ -149,18 +149,8 @@ class Agent:
                             self._watch_apps(ws),
                         )
                 except Exception as e:
+                    # Log only. Connection warnings are shown on the controller.
                     log.warning(f"disconnected: {e!r}; retrying in {backoff}s")
-                    # Only blame the relay when sign-in itself failed. A later
-                    # session error (for example clipboard) must not show this.
-                    if not self._peer_present and not self._reported_connect_error:
-                        self._reported_connect_error = True
-                        startup.notify(
-                            "This PC is not visible in the controller.\n\n"
-                            f"Cannot reach the relay:\n{self.args.relay}\n\n"
-                            f"{e}\n\n"
-                            "Use the same Relay URL and Network Key on the controller. "
-                            "The agent will keep retrying.",
-                            error=True)
                 finally:
                     self._peer_present = False
                     self.injector.release_all()
@@ -168,6 +158,7 @@ class Agent:
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 30)
         finally:
+            release_power()
             await self.close()
 
     async def close(self):
@@ -266,12 +257,14 @@ class Agent:
             if t == P.PEER_JOINED:
                 self._peer_present = True
                 self._latest_preview_jpeg = None
-                log.info("controller connected")
+                wake_display()
+                log.info("controller connected; display woken")
             elif t == P.PEER_LEFT:
                 self._peer_present = False
                 self._latest_session_jpeg = None
                 self.injector.release_all()
                 self.blocker.unblock()
+                allow_display_sleep()
                 log.info("controller left; input unblocked")
             elif t == P.INPUT_MOUSE:
                 self.injector.handle_mouse(msg)

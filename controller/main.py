@@ -420,11 +420,18 @@ class Dashboard(QWidget):
         self.signals.preview.connect(
             self._on_preview, Qt.ConnectionType.QueuedConnection)
         self.signals.status.connect(
-            self.status.setText, Qt.ConnectionType.QueuedConnection)
+            self._on_link_status, Qt.ConnectionType.QueuedConnection)
         self.signals.alert.connect(
             self._on_alert, Qt.ConnectionType.QueuedConnection)
         self.console = ConsoleNet(relay, key, self.signals)
         self.console.start()
+
+    def _on_link_status(self, text: str):
+        self.status.setText(text)
+        if text.startswith("disconnected"):
+            win = self.window()
+            if isinstance(win, MainWindow):
+                win.notify_link_problem(text)
 
     def _on_alert(self, alert: dict):
         win = self.window()
@@ -723,6 +730,13 @@ class MainWindow(QMainWindow):
         self.show()
         self.raise_()
         self.activateWindow()
+
+    def notify_link_problem(self, text: str):
+        """Connection warnings stay on this PC. The agent does not pop a dialog."""
+        self.statusBar().showMessage(text, 20000)
+        if self.tray is not None:
+            self.tray.showMessage(
+                "Connection problem", text, QSystemTrayIcon.Warning, 10000)
 
     def notify_watch_alert(self, alert: dict):
         """Popup + tray balloon when an agent PC opens a watched wallet/crypto app."""
