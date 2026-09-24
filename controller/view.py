@@ -34,6 +34,13 @@ _QT_KEYMAP = {
     Qt.Key_F5: "f5", Qt.Key_F6: "f6", Qt.Key_F7: "f7", Qt.Key_F8: "f8",
     Qt.Key_F9: "f9", Qt.Key_F10: "f10", Qt.Key_F11: "f11", Qt.Key_F12: "f12",
 }
+# Windows virtual-key codes for the physical left and right modifier keys.
+_QT_MODIFIER_VK = {
+    0xA0: "shift_l", 0xA1: "shift_r",
+    0xA2: "ctrl_l", 0xA3: "ctrl_r",
+    0xA4: "alt_l", 0xA5: "alt_r",
+    0x5B: "cmd_l", 0x5C: "cmd_r",
+}
 _QT_BUTTONS = {
     Qt.LeftButton: "left", Qt.RightButton: "right", Qt.MiddleButton: "middle",
 }
@@ -156,6 +163,9 @@ class RemoteView(QWidget):
             self.net.send_json(P.mouse(P.M_SCROLL, *n, dx=dx, dy=dy))
 
     def _key_name(self, e):
+        side = _QT_MODIFIER_VK.get(int(e.nativeVirtualKey() or 0))
+        if side:
+            return side
         if e.key() in _QT_KEYMAP:
             return _QT_KEYMAP[e.key()]
         txt = e.text()

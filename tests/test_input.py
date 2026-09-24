@@ -42,6 +42,15 @@ def test_tab_is_sent_to_remote_instead_of_moving_focus(app):
     assert messages == [P.key(P.K_DOWN, "tab"), P.key(P.K_UP, "tab")]
 
 
+def test_left_ctrl_is_named_from_the_windows_virtual_key(app):
+    view, messages = make_view()
+    press = QKeyEvent(QEvent.KeyPress, Qt.Key_Control, Qt.NoModifier, 0x1D, 0xA2, 0, "", False, 1)
+    release = QKeyEvent(QEvent.KeyRelease, Qt.Key_Control, Qt.NoModifier, 0x1D, 0xA2, 0, "", False, 1)
+    view.keyPressEvent(press)
+    view.keyReleaseEvent(release)
+    assert messages == [P.key(P.K_DOWN, "ctrl_l"), P.key(P.K_UP, "ctrl_l")]
+
+
 def test_focus_loss_releases_remote_keys(app):
     view, messages = make_view()
     view.keyPressEvent(key_event(QEvent.KeyPress, Qt.Key_Control))
