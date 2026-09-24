@@ -10,7 +10,8 @@ import re
 import sys
 from dataclasses import dataclass
 
-# Match against process name (without path) and window title. Keep lowercase.
+# Native payment apps. Matched on the process name. Keep lowercase.
+# Browsers and LDPlayer are not listed here: opening them is not a payment.
 WATCH_PATTERNS: tuple[tuple[str, str], ...] = (
     ("exodus", "Exodus wallet"),
     ("atomic", "Atomic wallet"),
@@ -47,6 +48,18 @@ WATCH_PATTERNS: tuple[tuple[str, str], ...] = (
     ("shopify pos", "Shopify POS"),
 )
 
+# Where a payment page or Android app can be showing. Used only to label the
+# alert ("in Chrome", "in LDPlayer"). These never alert by themselves.
+HOSTS: tuple[tuple[str, str], ...] = (
+    ("google chrome", "Chrome"),
+    ("microsoft edge", "Edge"),
+    ("firefox", "Firefox"),
+    ("opera", "Opera"),
+    ("brave", "Brave"),
+    ("ldplayer", "LDPlayer"),
+    ("dnplayer", "LDPlayer"),
+)
+
 
 @dataclass(frozen=True)
 class Match:
@@ -60,6 +73,7 @@ def _normalize(text: str) -> str:
 
 
 def _match_text(text: str) -> Match | None:
+    """Payment app only. A bare browser or LDPlayer title does not match."""
     norm = _normalize(text)
     if not norm:
         return None
@@ -67,6 +81,25 @@ def _match_text(text: str) -> Match | None:
         if pattern in norm:
             return Match(key=pattern, label=label, detail=text.strip()[:120])
     return None
+
+
+def _host_label(text: str) -> str | None:
+    norm = _normalize(text)
+    for pattern, label in HOSTS:
+        if pattern in norm:
+            return label
+    return None
+
+
+def _match_title(text: str) -> Match | None:
+    """Payment service visible in a local window, a browser tab, or LDPlayer."""
+    hit = _match_text(text)
+    if hit is None:
+        return None
+    host = _host_label(text)
+    if host is None:
+        return hit
+    return Match(hit.key, f"{hit.label} in {host}", f"in {host}: {text.strip()[:100]}")
 
 
 def list_process_names() -> list[str]:
@@ -187,8 +220,7 @@ def scan_matches() -> list[Match]:
         if hit and hit.key not in found:
             found[hit.key] = Match(hit.key, hit.label, f"process: {name}")
     for title in list_window_titles():
-        hit = _match_text(title)
+        hit = _match_title(title)
         if hit and hit.key not in found:
-            found[hit.key] = Match(
-                hit.key, hit.label, f"window: {title[:100]}")
+            found[hit.key] = Match(hit.key, hit.label, hit.detail)
     return list(found.values())

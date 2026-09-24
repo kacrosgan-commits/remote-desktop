@@ -25,6 +25,17 @@ def test_match_exodus_process_name():
     assert hit.label == "Exodus wallet"
 
 
+def test_payment_inside_browser_or_ldplayer():
+    from agent.watch_apps import _match_title
+    assert _match_text("chrome.exe") is None
+    assert _match_text("LDPlayer") is None
+    assert _match_text("dnplayer.exe") is None
+    browser = _match_title("Exodus Wallet - Google Chrome")
+    assert browser is not None and browser.label == "Exodus wallet in Chrome"
+    player = _match_title("MetaMask - LDPlayer")
+    assert player is not None and "LDPlayer" in player.label
+
+
 def test_match_stripe_window():
     hit = _match_text("Stripe Checkout")
     assert hit is not None
@@ -38,14 +49,13 @@ def test_match_ledger_window_title():
 
 
 def test_match_ignores_unrelated():
-    assert _match_text("chrome.exe") is None
-    assert _match_text("Microsoft Edge") is None
     assert _match_text("notepad") is None
+    assert _match_text("explorer.exe") is None
 
 
 def test_scan_matches_from_process_list():
     with patch("agent.watch_apps.list_process_names",
-               return_value=["Exodus.exe", "chrome.exe"]), \
+               return_value=["Exodus.exe", "notepad.exe"]), \
          patch("agent.watch_apps.list_window_titles", return_value=[]):
         hits = scan_matches()
     assert len(hits) == 1

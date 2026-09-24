@@ -123,30 +123,16 @@ def test_mark_device_offline_keeps_card_and_does_not_quit(app, monkeypatch):
     dashboard.close()
 
 
-def test_status_change_notifies_after_baseline(app, monkeypatch):
+def test_status_change_does_not_notify(app, monkeypatch):
     monkeypatch.setattr(main.store, "load", lambda: ("ws://localhost:8000/ws", "key"))
     monkeypatch.setattr(main.store, "load_hidden", lambda: set())
     monkeypatch.setattr(main.store, "save", Mock())
     monkeypatch.setattr(main, "PreviewFeed", Mock())
     monkeypatch.setattr(main, "ConsoleNet", Mock())
-    notify = Mock()
-    monkeypatch.setattr(main.Dashboard, "_notify_status", notify)
     dashboard = main.Dashboard(Mock())
-    # First sync establishes baseline — no notification spam.
     dashboard._update_devices([{"id": "pc", "name": "Office", "online": True}])
-    notify.assert_not_called()
-    # Goes offline → notify once.
     dashboard._update_devices([{"id": "pc", "name": "Office", "online": False}])
-    notify.assert_called_once()
-    assert notify.call_args.args[:3] == ("Office", "pc", False)
-    notify.reset_mock()
-    # Same offline again → no repeat.
-    dashboard._update_devices([{"id": "pc", "name": "Office", "online": False}])
-    notify.assert_not_called()
-    # Comes back online → notify.
-    dashboard._update_devices([{"id": "pc", "name": "Office", "online": True}])
-    notify.assert_called_once()
-    assert notify.call_args.args[:3] == ("Office", "pc", True)
+    assert dashboard._cards["pc"].status.text() == "○ Offline"
     dashboard.shutdown_previews()
     dashboard.close()
 
